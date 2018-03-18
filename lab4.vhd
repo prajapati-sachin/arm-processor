@@ -101,11 +101,12 @@ end multiplier;
 
 architecture multiplier of multiplier is
 signal c : std_logic_vector (1 downto 0):="00";
+signal temp_result : std_logic_vector (63 downto 0);
 signal flag : std_logic_vector (3 downto 0):="0000";
 signal resultl : std_logic_vector(31 downto 0);  
 begin
-   resultl <= op1 * op2;
-   result <= resultl;
+   temp_result <= op1 * op2;
+   result <= temp_result(31 downto 0);
                             
 
                    
