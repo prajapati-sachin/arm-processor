@@ -49,30 +49,34 @@ end component;
 
 component Datapath
 PORT ( 
-        clk : in std_logic;
-		reset : in std_logic;
-		instruction : out std_logic_vector(31 downto 0);
-		F            : out std_logic_vector(3 downto 0);
-		PW           : in  std_logic;
-		IorD         : in  std_logic;
-		MR           : in  std_logic;
-		MW           : in  std_logic;
-		IW           : in  std_logic;
-		DW           : in  std_logic;
-		Rsrc         : in  std_logic;
-		M2R          : in  std_logic;
-		RW           : in  std_logic;
-		AW           : in  std_logic;
-		BW           : in  std_logic;
-		Asrc1        : in  std_logic;
-		Asrc2        : in  std_logic_vector(1 downto 0);
-		Fset         : in  std_logic;
-		Op           : in  std_logic_vector(3 downto 0);
-		ReW          : in  std_logic;
-		Mul          : in std_logic;
-		sft_enable     : in std_logic;
-		sft_type       : in std_logic_vector(1 downto 0);
-		sft_amount     : in std_logic_vector(4 downto 0)
+        clock, reset : in std_logic;
+	ins          : out std_logic_vector(31 downto 0);
+	F            : out std_logic_vector(3 downto 0);
+	PW           : in  std_logic;
+	IorD         : in  std_logic;
+	MR           : in  std_logic;
+	MW           : in  std_logic;
+	IW           : in  std_logic;
+	DW           : in  std_logic;
+	Rsrc         : in  std_logic;
+--	Shi          : in  std_logic; --shiftamount from register
+--	Shift        : in  std_logic; --shift( from register '1' and from intruction '0')
+    Shift_amount : in std_logic_vector(4 downto 0);
+	Wsrc         : in  std_logic;
+	M2R          : in  std_logic;
+	RW           : in  std_logic;
+	AW           : in  std_logic;
+	BW           : in  std_logic;
+	Asrc1        : in  std_logic;
+	Asrc2        : in  std_logic_vector(1 downto 0);
+	MorA        : in  std_logic;
+	Fset         : in  std_logic;
+	alu_op       : in  std_logic_vector(3 downto 0);
+	p_m_path_op  : in   std_logic_vector(3 downto 0);
+	byte_offset  : in std_logic_vector(1 downto 0);
+	ReW          : in  std_logic;
+    shift_type : IN std_logic_vector(1 downto 0);  
+    shift_enable : IN std_logic 
 		
 );
 end component;
@@ -107,35 +111,64 @@ begin
 -- Sample connections are shown below
 -- LEDs are currently connected to monitor the file transfer from uart to memory
  
-DP_inst : Datapath port map(
-	clk => CLK,
-	reset => BTN(4),             
-	instruction   => IR,                 
-	F     => Flags_out,          
-	PW    => dout_mem(0),        
-	IorD  => dout_mem(1),        
-	MR    => dout_mem(2),        
-	MW    => dout_mem(3),        
-	IW    => dout_mem(4),        
-	DW    => dout_mem(5),        
-	Rsrc  => dout_mem(6),        
-	M2R   => dout_mem(7),        
-	RW    => dout_mem(8),        
-	AW    => dout_mem(9),        
-	BW    => dout_mem(10),       
-	Asrc1 => dout_mem(11),       
-	Asrc2 => dout_mem(13 downto 12),
-	Fset  => dout_mem(14),        
-	Op    => dout_mem(18 downto 15),
-	ReW   => dout_mem(19),
-	Mul   => '0',
-	sft_enable => sft_enable,
-	sft_type => sft_type,
-	sft_amount => sft_amount
+--DP_inst : Datapath port map(
+--	clk => CLK,
+--	reset => BTN(4),             
+--	instruction   => IR,                 
+--	F     => Flags_out,          
+--	PW    => dout_mem(0),        
+--	IorD  => dout_mem(1),        
+--	MR    => dout_mem(2),        
+--	MW    => dout_mem(3),        
+--	IW    => dout_mem(4),        
+--	DW    => dout_mem(5),        
+--	Rsrc  => dout_mem(6),        
+--	M2R   => dout_mem(7),        
+--	RW    => dout_mem(8),        
+--	AW    => dout_mem(9),        
+--	BW    => dout_mem(10),       
+--	Asrc1 => dout_mem(11),       
+--	Asrc2 => dout_mem(13 downto 12),
+--	Fset  => dout_mem(14),        
+--	Op    => dout_mem(18 downto 15),
+--	ReW   => dout_mem(19),
+--	Mul   => '0',
+--	sft_enable => sft_enable,
+--	sft_type => sft_type,
+--	sft_amount => sft_amount
 	        
-);
-
-
+--);
+ 
+ DP_inst : Datapath port map(
+     clock => CLK,
+     reset => BTN(4),
+     ins   => IR,
+     F     => Flags_out,
+     PW    => dout_mem(0),
+     IorD  => dout_mem(1),
+     MR   => dout_mem(2),
+     MW   => dout_mem(3),
+     IW   => dout_mem(4),
+     DW  => dout_mem(5),
+     Rsrc     => dout_mem(6),
+     shift_amount => sft_amount,
+     Wsrc     => '0',
+     M2R       => dout_mem(7),
+     RW      => dout_mem(8),
+     AW         => dout_mem(9),
+     BW           => dout_mem(10),
+     Asrc1       => dout_mem(11),
+     Asrc2     => dout_mem(13 downto 12),
+     MorA     => '1',
+     Fset      => dout_mem(14),
+     alu_op     => dout_mem(18 downto 15),
+     p_m_path_op  => "1001",
+     byte_offset => "00",
+     ReW        => dout_mem(19),
+     shift_type => sft_type,
+     shift_enable => sft_enable
+     
+  );
 
 
 
@@ -227,3 +260,4 @@ with switch_pair select
 --UART_TXD <= temp;
 
 end Behavioral;
+

@@ -88,7 +88,8 @@ end alu;
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
-USE ieee.std_logic_unsigned.all;
+use ieee.STD_LOGIC_ARITH.all;
+
 entity multiplier is
     port(
         op1 : IN  std_logic_vector(31 downto 0);
@@ -147,6 +148,7 @@ entity shifter is
         op1 : IN  std_logic_vector(31 downto 0);
         shift_type : IN std_logic_vector(1 downto 0); 
         shift_amount : IN std_logic_vector(4 downto 0);       
+        shift_enable : IN std_logic;
         shift_carry : OUT std_logic;	
         result : OUT std_logic_vector(31 downto 0)     
 	);
@@ -157,6 +159,7 @@ signal c : std_logic;
 signal a : std_logic_vector (31 downto 0);
 signal b : std_logic_vector (31 downto 0);
 signal amount : integer range 0 to 31:= 0;
+signal shift_amount1 : std_logic_vector (4 downto 0):="00000";
 signal flag : std_logic_vector (3 downto 0):="0000"; 
 --Shift type
 --00 = logical left
@@ -168,7 +171,10 @@ signal flag : std_logic_vector (3 downto 0):="0000";
 
 begin
     a <= op1;
-    amount <= to_integer(unsigned(shift_amount));
+    with shift_enable select
+        shift_amount1 <= "00000" when '0',
+                           shift_amount when others;  
+    amount <= to_integer(unsigned(shift_amount1));
     with shift_type select
     b <= std_logic_vector(shift_left(unsigned(op1), amount)) when "00",
          std_logic_vector(shift_right(unsigned(op1), amount)) when "01",
@@ -288,7 +294,7 @@ entity p_m_path is
     byte_offset : IN std_logic_vector(1 downto 0);  
     processor_output : OUT std_logic_vector(31 downto 0) ;
     memory_output : OUT std_logic_vector(31 downto 0) ; 
-    write_enables : OUT std_logic_vector(1 downto 0)     
+    write_enables : OUT std_logic_vector(3 downto 0)     
     );
 end p_m_path;
 
@@ -343,20 +349,29 @@ begin
     d(31 downto 16) <=  d(15 downto 0);
   
     
-    with inst_type(2 downto 0) select
-         processor_output <= memory_input when "000",
-                             b            when "010",
-                             a            when others;
+ with inst_type(2 downto 0) select
+            processor_output <= a            when "100",
+                                b            when "010",
+                                memory_input when others;
+                       
+       with inst_type(2 downto 0) select
+            memory_output <=    c            when "101",
+                                d            when "011",
+                                processor_input      when others;
+--    with inst_type(2 downto 0) select
+--         processor_output <= memory_input when "000",
+--                             b            when "010",
+--                             a            when others;
                     
-    with inst_type(2 downto 0) select
-         memory_output <= processor_input when "001",
-                             d            when "011",
-                             c            when others;
+--    with inst_type(2 downto 0) select
+--         memory_output <= processor_input when "001",
+--                             d            when "011",
+--                             c            when others;
     
     with inst_type(2 downto 1) select
-        write_enables <= "00" when "00",--word
-                         "01" when "01",-- half word
-                         "10" when others;--byte
+        write_enables <= "1111" when "00",--word
+                         "1100" when "01",-- half word
+                         "1000" when others;--byte
     
    
    
@@ -371,40 +386,61 @@ use IEEE.NUMERIC_STD.ALL;
 USE ieee.std_logic_unsigned.all;
 entity memory is
 port(
-    write_enables : std_logic_vector(1 downto 0);
+    write_enables : std_logic_vector(3 downto 0);
     wr_data : IN  std_logic_vector(31 downto 0);
     addr : IN std_logic_vector(5 downto 0); 
     write_enable : IN std_logic;
     read_enable : IN std_logic;
-    clock : IN std_logic;	
-	rd_data : OUT std_logic_vector(31 downto 0) 
-	    
-	);
+    clock : IN std_logic;    
+    rd_data : OUT std_logic_vector(31 downto 0) 
+        
+    );
 end memory;
 --00 for word 01 for hLF WORD 10 FOR BYTE
 architecture data_memory of memory is
-type memory_array is array(0 to 63) of std_logic_vector(31 downto 0);
-signal data_memory : memory_array := (others => (others => '0'));
-signal address : Integer; 
+--type memory_array is array(0 to 63) of std_logic_vector(31 downto 0);
+--signal data_memory : memory_array := (others => (others => '0'));
+--signal address : Integer; 
+component BRAM_wrapper is
+ port (
+   BRAM_PORTA_addr : in STD_LOGIC_VECTOR ( 12 downto 0 );
+   BRAM_PORTA_clk : in STD_LOGIC;
+   BRAM_PORTA_din : in STD_LOGIC_VECTOR ( 31 downto 0 );
+   BRAM_PORTA_dout : out STD_LOGIC_VECTOR ( 31 downto 0 );
+   BRAM_PORTA_en : in STD_LOGIC;
+   BRAM_PORTA_we : in STD_LOGIC_VECTOR ( 3 downto 0 )
+ );
+ end component;
+ 
+signal address : std_logic_vector(12 downto 0) := (others => '0');
 begin
-    address <= to_integer(unsigned(addr));
-    process(wr_data,clock,address,write_enable,read_enable,write_enables)
-        begin
-        if read_enable = '1' then
-            rd_data <= data_memory(address);
-        end if;  
-        if write_enable ='1' then
-            if clock'event and clock = '1' then
-                if write_enables = "00" then
-                    data_memory(address) <= wr_data;
-                elsif write_enables = "01" then
-                    data_memory(address)(15 downto 0) <= wr_data(15 downto 0);
-                elsif write_enables = "10" then
-                    data_memory(address)(7 downto 0) <= wr_data(7 downto 0);
-                end if;
-            end if;
-        end if;
-    end process;
+--    address <= to_integer(unsigned(addr));
+--    process(wr_data,clock,address,write_enable,read_enable,write_enables)
+--        begin
+--        if read_enable = '1' then
+--            rd_data <= data_memory(address);
+--        end if;  
+--        if write_enable ='1' then
+--            if clock'event and clock = '1' then
+--                if write_enables = "00" then
+--                    data_memory(address) <= wr_data;
+--                elsif write_enables = "01" then
+--                    data_memory(address)(15 downto 0) <= wr_data(15 downto 0);
+--                elsif write_enables = "10" then
+--                    data_memory(address)(7 downto 0) <= wr_data(7 downto 0);
+--                end if;
+--            end if;
+--        end if;
+--    end process;
+address(5 downto 0) <= addr;
+bram: BRAM_wrapper port map
+(       BRAM_PORTA_addr => address,
+        BRAM_PORTA_clk => clock,
+        BRAM_PORTA_din => wr_data,
+        BRAM_PORTA_dout => rd_data,
+        BRAM_PORTA_en => read_enable,
+        BRAM_PORTA_we => write_enables
+); 
 
 end data_memory;
 
@@ -573,6 +609,37 @@ begin
 end register_31;
 
 ---------------------------------------------------------------------------------------------------------------
+-- REGISTER 4 bit
+-----------------------------------------------------------------------------------------------------------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+USE ieee.std_logic_unsigned.all;
+entity register_3 is
+port(
+    wr : IN  std_logic_vector(3 downto 0);
+    enable: IN std_logic;
+    clock : IN std_logic;    
+    rd : OUT std_logic_vector(3 downto 0)  
+    );
+end register_3;
+
+architecture register_3 of register_3 is
+signal data : std_logic_vector(3 downto 0);
+begin
+    rd <= data;
+    process(wr,clock,enable)
+        begin
+        if clock'event and clock = '1' then
+            if enable ='1' then
+                data <= wr;
+            end if;
+        end if;
+    end process;
+
+end register_3;
+
+---------------------------------------------------------------------------------------------------------------
 --S2
 -----------------------------------------------------------------------------------------------------------
 library IEEE;
@@ -642,8 +709,9 @@ PORT (
 	IW           : in  std_logic;
 	DW           : in  std_logic;
 	Rsrc         : in  std_logic;
-	Shi          : in  std_logic; --shiftamount from register
-	Shift        : in  std_logic; --shift( from register '1' and from intruction '0')
+--	Shi          : in  std_logic; --shiftamount from register
+--	Shift        : in  std_logic; --shift( from register '1' and from intruction '0')
+    Shift_amount : in std_logic_vector(4 downto 0);
 	Wsrc         : in  std_logic;
 	M2R          : in  std_logic;
 	RW           : in  std_logic;
@@ -657,8 +725,8 @@ PORT (
 	p_m_path_op  : in   std_logic_vector(3 downto 0);
 	byte_offset  : in std_logic_vector(1 downto 0);
 	ReW          : in  std_logic;
-    shift_type : IN std_logic_vector(1 downto 0)  
-        
+    shift_type : IN std_logic_vector(1 downto 0);  
+    shift_enable : IN std_logic    
 );
 end datapath;
 
@@ -680,6 +748,7 @@ port(
         op1 : IN  std_logic_vector(31 downto 0);
         shift_type : IN std_logic_vector(1 downto 0); 
         shift_amount : IN std_logic_vector(4 downto 0);       
+        shift_enable : IN std_logic;
         shift_carry : OUT std_logic;	
         result : OUT std_logic_vector(31 downto 0)     
 	);
@@ -702,7 +771,7 @@ port(
         byte_offset : IN std_logic_vector(1 downto 0); 	
         processor_output : OUT std_logic_vector(31 downto 0) ;
         memory_output : OUT std_logic_vector(31 downto 0) ; 
-        write_enables : OUT std_logic_vector(1 downto 0)     
+        write_enables : OUT std_logic_vector(3 downto 0)     
 	);
 end component;
 
@@ -722,7 +791,7 @@ end component;
 
 component memory is
 port(
-        write_enables : std_logic_vector(1 downto 0);
+        write_enables : std_logic_vector(3 downto 0);
         wr_data : IN  std_logic_vector(31 downto 0);
         addr : IN std_logic_vector(5 downto 0); 
         write_enable : IN std_logic;
@@ -802,6 +871,17 @@ port(
 	);
 end component;
 
+component register_3 is
+port(
+        wr : IN  std_logic_vector(3 downto 0);
+        enable: IN std_logic;
+        clock : IN std_logic;    
+        rd : OUT std_logic_vector(3 downto 0)  
+    );
+end component;
+
+
+
 signal pc_output : std_logic_vector(5 downto 0) := (others => '0') ;
 signal memory_input_addr : std_logic_vector(5 downto 0) := (others => '0') ;
 signal res_output : std_logic_vector(31 downto 0) := (others => '0') ;
@@ -828,18 +908,19 @@ signal alu_input2 : std_logic_vector(31 downto 0) := (others => '0') ;
 signal alu_output : std_logic_vector(31 downto 0) := (others => '0') ;
 signal data_addr : std_logic_vector(31 downto 0) := (others => '0') ;
 signal flags : std_logic_vector(3 downto 0) := (others => '0') ;
-signal write_enable_for_memory : std_logic_vector(1 downto 0) := (others => '0') ;
+signal write_enable_for_memory : std_logic_vector(3 downto 0) := (others => '0') ;
 signal pc_extended : std_logic_vector(31 downto 0) := (others => '0') ;
 signal output_asrc1 : std_logic_vector(31 downto 0) := (others => '0') ;
 signal output_asrc2 : std_logic_vector(31 downto 0) := (others => '0') ;
 signal multiplier_output : std_logic_vector(31 downto 0) := (others => '0') ;
 signal final_output : std_logic_vector(31 downto 0) := (others => '0') ;
-signal shift_amount : std_logic_vector(4 downto 0) := (others => '0') ;
+signal shi : std_logic ;
 
 begin
 branch_offset <= instruction(23 downto 0);
 immediate_operand <= instruction(11 downto 0);
 pc_extended(5 downto 0) <= pc_output(5 downto 0);
+shi <= '1';
 
 
 
@@ -981,9 +1062,9 @@ Mul_for_asrc2 : mux_4 port map
    data =>  output_asrc2
 ); 
 
-with shift select 
-    shift_amount <= rd_data1 when '1',
-                    instruction(11 downto 7) when others;
+--with shift select 
+--    shift_amount <= rd_data1 when '1',
+--                    instruction(11 downto 7) when others;
        
 
 shifter_unit : shifter port map
@@ -991,6 +1072,7 @@ shifter_unit : shifter port map
     op1 => output_asrc2,
     shift_type => shift_type, 
     shift_amount => shift_amount,       
+    shift_enable => shift_enable,
     shift_carry => flags(1),	
     result => alu_input2     
 	);
@@ -1017,11 +1099,23 @@ RES : register_31 port map
     rd => res_output
 );
 
-with Fset select
-    F <= flags when '1',
-         "0000" when others;
+Flag : register_3 port map
+(   wr => flags,
+    enable => Fset,
+    clock => clock,    
+    rd => F  
+);
+
+--with Fset select
+--    F <= flags when '1',
+--         "0000" when others;
+
+--with Fset select
+--    F <= flags when '1',
+--         "0000" when others;
 
 end datapath;
+
 
 
 
