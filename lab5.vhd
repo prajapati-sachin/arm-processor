@@ -87,6 +87,55 @@ begin
     
 end Actrl;
 
+---------------------------------------------------------------------------------------------------------------
+--INSTRUCTION DECODER
+-----------------------------------------------------------------------------------------------------------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+USE ieee.std_logic_unsigned.all;
+entity Instr_decoder is
+port(
+    Instruction: IN  std_logic_vector(31 downto 0);    
+    DP_reg: OUT std_logic;
+    DP_imm: OUT std_logic;
+    no_result: OUT std_logic;
+    immediate: OUT std_logic_vector(7 downto 0);
+    alu_op: OUT std_logic_vector(3 downto 0);
+    DT : OUT std_logic
+    );
+end Instr_decoder;
+
+architecture Instr_decoder of Instr_decoder is
+begin
+   process(Instruction)
+        begin
+        case Instruction(27 downto 26) is
+            when "00" =>  if Instruction(25) = '1' then
+                               DP_imm <= '1' ;
+                               DP_reg <= '0';
+                               alu_op  <= Instruction(24 downto 21);
+                               if Instruction(24 downto 23) = "10" then 
+                                    no_result <= '1';
+                               else
+                                    no_result <= '0';
+                               end if;
+                               immediate <= Instruction(7 downto 0);   
+                          else
+                               DP_reg <= '1';
+                               DP_imm  <= '0';
+                               
+                          end if;
+            when "01" =>
+            
+            when "10" =>
+            
+            when others => 
+                
+        end case;
+   end process;
+end Instr_decoder;
+
 
 
 

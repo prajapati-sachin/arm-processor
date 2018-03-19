@@ -21,6 +21,7 @@ architecture alu of alu is
 signal c : std_logic_vector (1 downto 0):="00";
 signal flag : std_logic_vector (3 downto 0):="0000";
 signal resultl : std_logic_vector(31 downto 0);  
+
 begin
     with operation select
         resultl <= op1 and op2 when "0000", --and
@@ -53,7 +54,7 @@ begin
 --                 resultl when "1101", --mov
 --                 resultl when "1110", --bic
 --                 resultl when "1111"; --mvn
-                result <= resultl;
+                    result <= resultl;
                             
 
              --Flag order = N Z C V
@@ -88,7 +89,7 @@ end alu;
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
-use ieee.STD_LOGIC_ARITH.all;
+USE ieee.std_logic_unsigned.all;
 
 entity multiplier is
     port(
@@ -909,6 +910,7 @@ signal alu_input2 : std_logic_vector(31 downto 0) := (others => '0') ;
 signal alu_output : std_logic_vector(31 downto 0) := (others => '0') ;
 signal data_addr : std_logic_vector(31 downto 0) := (others => '0') ;
 signal flags : std_logic_vector(3 downto 0) := (others => '0') ;
+signal F1 : std_logic_vector(3 downto 0) := (others => '0') ;
 signal write_enable_for_memory : std_logic_vector(3 downto 0) := (others => '0') ;
 signal pc_extended : std_logic_vector(31 downto 0) := (others => '0') ;
 signal output_asrc1 : std_logic_vector(31 downto 0) := (others => '0') ;
@@ -932,7 +934,7 @@ alu1 : alu port map
 	result => alu_output,
 	flags => flags,
 	operation => alu_op,
-	carry => flags(1)	
+	carry => F1(1)	
 );
 
 pc : program_counter port map
@@ -1104,9 +1106,9 @@ Flag : register_3 port map
 (   wr => flags,
     enable => Fset,
     clock => clock,    
-    rd => F  
+    rd => F1  
 );
-
+F <= F1;
 --with Fset select
 --    F <= flags when '1',
 --         "0000" when others;
@@ -1116,6 +1118,7 @@ Flag : register_3 port map
 --         "0000" when others;
 
 end datapath;
+
 
 
 
