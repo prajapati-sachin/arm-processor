@@ -928,12 +928,21 @@ shi <= '1';
 
 
 alu1 : alu port map
+<<<<<<< HEAD
 ( op1 => alu_input1,
   op2 => alu_input2, 
   result => alu_output,
   flags => flags,
   operation => alu_op,
   carry => F1(1)  
+=======
+(	op1 => alu_input1,
+	op2 => alu_input2, 
+	result => alu_output,
+	flags => flags,
+	operation => alu_op,
+	carry => F1(1)	
+>>>>>>> 2b74420e6f0d210812e257a1d8d20d3c25a4b485
 );
 
 pc : program_counter port map
@@ -1116,4 +1125,18 @@ F <= F1;
 --    F <= flags when '1',
 --         "0000" when others;
 
+<<<<<<< HEAD
 end datapath;
+=======
+end datapath;
+
+
+
+
+
+
+
+
+
+
+>>>>>>> 2b74420e6f0d210812e257a1d8d20d3c25a4b485
