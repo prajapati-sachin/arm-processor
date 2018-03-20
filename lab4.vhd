@@ -1,4 +1,3 @@
-
 ---------------------------------------------------------------------------------------------------------------
 --ALU
 -----------------------------------------------------------------------------------------------------------
@@ -10,11 +9,11 @@ entity alu is
     port(
         op1 : IN  std_logic_vector(31 downto 0);
         op2 : IN  std_logic_vector(31 downto 0);
-	operation : IN std_logic_vector(3 downto 0);        
-	carry : IN std_logic;	
-	result : OUT std_logic_vector(31 downto 0);
-	flags : OUT std_logic_vector(3 downto 0)        
-	);
+  operation : IN std_logic_vector(3 downto 0);        
+  carry : IN std_logic; 
+  result : OUT std_logic_vector(31 downto 0);
+  flags : OUT std_logic_vector(3 downto 0)        
+  );
 end alu;
 
 architecture alu of alu is
@@ -78,7 +77,7 @@ begin
 --             if result(31) = '1' then
 --                 flag(3) <= '1';    
 --             flags(3 downto 0) <= flag(3 downto 0); 
-	         flags<= flag;
+           flags<= flag;
       
             
 end alu;
@@ -94,10 +93,10 @@ USE ieee.std_logic_unsigned.all;
 entity multiplier is
     port(
         op1 : IN  std_logic_vector(31 downto 0);
-        op2 : IN  std_logic_vector(31 downto 0);	
-	result : OUT std_logic_vector(31 downto 0);
-	flags : OUT std_logic_vector(3 downto 0)        
-	);
+        op2 : IN  std_logic_vector(31 downto 0);  
+  result : OUT std_logic_vector(31 downto 0);
+  flags : OUT std_logic_vector(3 downto 0)        
+  );
 end multiplier;
 
 architecture multiplier of multiplier is
@@ -134,7 +133,7 @@ begin
 --             flags(3 downto 0) <= flag(3 downto 0); 
             flags<= flag;
 
-	
+  
 end multiplier;
 
 -----------------------------------------------------------------------------------------------------------
@@ -151,9 +150,9 @@ entity shifter is
         shift_type : IN std_logic_vector(1 downto 0); 
         shift_amount : IN std_logic_vector(4 downto 0);       
         shift_enable : IN std_logic;
-        shift_carry : OUT std_logic;	
+        shift_carry : OUT std_logic;  
         result : OUT std_logic_vector(31 downto 0)     
-	);
+  );
 end shifter;
 
 architecture shifter of shifter is
@@ -235,10 +234,10 @@ port(
     rd_addr2 : IN std_logic_vector(3 downto 0); 
     write_enable : IN std_logic;
     clock : IN std_logic;
-    reset : IN std_logic;	
-	rd_data1 : OUT std_logic_vector(31 downto 0) ; 
-	rd_data2 : OUT std_logic_vector(31 downto 0)     
-	);
+    reset : IN std_logic; 
+  rd_data1 : OUT std_logic_vector(31 downto 0) ; 
+  rd_data2 : OUT std_logic_vector(31 downto 0)     
+  );
 end register_file;
 
 architecture register_file of register_file is
@@ -460,10 +459,10 @@ port(
     
     write_enable : IN std_logic;
     read_enable : IN std_logic;
-    clock : IN std_logic;	
-	rd_data : OUT std_logic_vector(5 downto 0) 
-	    
-	);
+    clock : IN std_logic; 
+  rd_data : OUT std_logic_vector(5 downto 0) 
+      
+  );
 end program_counter;
 
 architecture program_counter of program_counter is
@@ -494,10 +493,10 @@ USE ieee.std_logic_unsigned.all;
 entity mux_2_5 is
 port(
     data1: IN  std_logic_vector(5 downto 0);
-    data2: IN  std_logic_vector(5 downto 0);	
+    data2: IN  std_logic_vector(5 downto 0);  
     cntrl : IN std_logic;
-	data : OUT std_logic_vector(5 downto 0)  
-	);
+  data : OUT std_logic_vector(5 downto 0)  
+  );
 end mux_2_5;
 
 architecture mux of mux_2_5 is
@@ -517,10 +516,10 @@ USE ieee.std_logic_unsigned.all;
 entity mux_2_3 is
 port(
     data1: IN  std_logic_vector(3 downto 0);
-    data2: IN  std_logic_vector(3 downto 0);	
+    data2: IN  std_logic_vector(3 downto 0);  
     cntrl : IN std_logic;
-	data : OUT std_logic_vector(3 downto 0)  
-	);
+  data : OUT std_logic_vector(3 downto 0)  
+  );
 end mux_2_3;
 
 architecture mux of mux_2_3 is
@@ -540,10 +539,10 @@ USE ieee.std_logic_unsigned.all;
 entity mux_2_31 is
 port(
     data1: IN  std_logic_vector(31 downto 0);
-    data2: IN  std_logic_vector(31 downto 0);	
+    data2: IN  std_logic_vector(31 downto 0); 
     cntrl : IN std_logic;
-	data : OUT std_logic_vector(31 downto 0)  
-	);
+  data : OUT std_logic_vector(31 downto 0)  
+  );
 end mux_2_31;
 
 architecture mux of mux_2_31 is
@@ -564,10 +563,10 @@ entity mux_4 is
 port(
     data1: IN  std_logic_vector(31 downto 0);
     data3: IN  std_logic_vector(31 downto 0);
-    data4: IN  std_logic_vector(31 downto 0);	
+    data4: IN  std_logic_vector(31 downto 0); 
     cntrl : IN std_logic_vector(1 downto 0);
-	data : OUT std_logic_vector(31 downto 0)  
-	);
+  data : OUT std_logic_vector(31 downto 0)  
+  );
 end mux_4;
 
 architecture mux of mux_4 is
@@ -590,9 +589,9 @@ entity register_31 is
 port(
     wr : IN  std_logic_vector(31 downto 0);
     enable: IN std_logic;
-    clock : IN std_logic;	
-	rd : OUT std_logic_vector(31 downto 0)  
-	);
+    clock : IN std_logic; 
+  rd : OUT std_logic_vector(31 downto 0)  
+  );
 end register_31;
 
 architecture register_31 of register_31 is
@@ -650,9 +649,9 @@ use IEEE.NUMERIC_STD.ALL;
 USE ieee.std_logic_unsigned.all;
 entity s2 is
 port(
-    data1: IN  std_logic_vector(23 downto 0);	
-	data : OUT std_logic_vector(31 downto 0)  
-	);
+    data1: IN  std_logic_vector(23 downto 0); 
+  data : OUT std_logic_vector(31 downto 0)  
+  );
 end s2;
 
 architecture s2 of s2 is
@@ -679,9 +678,9 @@ use IEEE.NUMERIC_STD.ALL;
 USE ieee.std_logic_unsigned.all;
 entity ex is
 port(
-    data1: IN  std_logic_vector(11 downto 0);	
-	data : OUT std_logic_vector(31 downto 0) := (others => '0') 
-	);
+    data1: IN  std_logic_vector(11 downto 0); 
+  data : OUT std_logic_vector(31 downto 0) := (others => '0') 
+  );
 end ex;
 
 architecture ex of ex is
@@ -701,32 +700,32 @@ use IEEE.NUMERIC_STD.ALL;
 USE ieee.std_logic_unsigned.all;
 entity datapath is
 PORT ( 
-	clock, reset : in std_logic;
-	ins          : out std_logic_vector(31 downto 0);
-	F            : out std_logic_vector(3 downto 0);
-	PW           : in  std_logic;
-	IorD         : in  std_logic;
-	MR           : in  std_logic;
-	MW           : in  std_logic;
-	IW           : in  std_logic;
-	DW           : in  std_logic;
-	Rsrc         : in  std_logic;
---	Shi          : in  std_logic; --shiftamount from register
---	Shift        : in  std_logic; --shift( from register '1' and from intruction '0')
+  clock, reset : in std_logic;
+  ins          : out std_logic_vector(31 downto 0);
+  F            : out std_logic_vector(3 downto 0);
+  PW           : in  std_logic;
+  IorD         : in  std_logic;
+  MR           : in  std_logic;
+  MW           : in  std_logic;
+  IW           : in  std_logic;
+  DW           : in  std_logic;
+  Rsrc         : in  std_logic;
+--  Shi          : in  std_logic; --shiftamount from register
+--  Shift        : in  std_logic; --shift( from register '1' and from intruction '0')
     Shift_amount : in std_logic_vector(4 downto 0);
-	Wsrc         : in  std_logic;
-	M2R          : in  std_logic;
-	RW           : in  std_logic;
-	AW           : in  std_logic;
-	BW           : in  std_logic;
-	Asrc1        : in  std_logic;
-	Asrc2        : in  std_logic_vector(1 downto 0);
-	MorA        : in  std_logic;
-	Fset         : in  std_logic;
-	alu_op       : in  std_logic_vector(3 downto 0);
-	p_m_path_op  : in   std_logic_vector(3 downto 0);
-	byte_offset  : in std_logic_vector(1 downto 0);
-	ReW          : in  std_logic;
+  Wsrc         : in  std_logic;
+  M2R          : in  std_logic;
+  RW           : in  std_logic;
+  AW           : in  std_logic;
+  BW           : in  std_logic;
+  Asrc1        : in  std_logic;
+  Asrc2        : in  std_logic_vector(1 downto 0);
+  MorA        : in  std_logic;
+  Fset         : in  std_logic;
+  alu_op       : in  std_logic_vector(3 downto 0);
+  p_m_path_op  : in   std_logic_vector(3 downto 0);
+  byte_offset  : in std_logic_vector(1 downto 0);
+  ReW          : in  std_logic;
     shift_type : IN std_logic_vector(1 downto 0);  
     shift_enable : IN std_logic    
 );
@@ -739,10 +738,10 @@ port(
         op1 : IN  std_logic_vector(31 downto 0);
         op2 : IN  std_logic_vector(31 downto 0);
         operation : IN std_logic_vector(3 downto 0);        
-        carry : IN std_logic;	
+        carry : IN std_logic; 
         result : OUT std_logic_vector(31 downto 0);
         flags : OUT std_logic_vector(3 downto 0)        
-	);
+  );
 end component;
 
 component shifter is
@@ -751,18 +750,18 @@ port(
         shift_type : IN std_logic_vector(1 downto 0); 
         shift_amount : IN std_logic_vector(4 downto 0);       
         shift_enable : IN std_logic;
-        shift_carry : OUT std_logic;	
+        shift_carry : OUT std_logic;  
         result : OUT std_logic_vector(31 downto 0)     
-	);
+  );
 end component;
 
 component multiplier is
 port(
         op1 : IN  std_logic_vector(31 downto 0);
-        op2 : IN  std_logic_vector(31 downto 0);	
+        op2 : IN  std_logic_vector(31 downto 0);  
         result : OUT std_logic_vector(31 downto 0);
         flags : OUT std_logic_vector(3 downto 0)        
-	);
+  );
 end component;
 
 component p_m_path is
@@ -770,11 +769,11 @@ port(
         processor_input : IN  std_logic_vector(31 downto 0);
         memory_input : IN std_logic_vector(31 downto 0); 
         inst_type: IN std_logic_vector(3 downto 0); 
-        byte_offset : IN std_logic_vector(1 downto 0); 	
+        byte_offset : IN std_logic_vector(1 downto 0);  
         processor_output : OUT std_logic_vector(31 downto 0) ;
         memory_output : OUT std_logic_vector(31 downto 0) ; 
         write_enables : OUT std_logic_vector(3 downto 0)     
-	);
+  );
 end component;
 
 component register_file is
@@ -785,10 +784,10 @@ port(
         rd_addr2 : IN std_logic_vector(3 downto 0); 
         write_enable : IN std_logic;
         clock : IN std_logic;
-        reset : IN std_logic;	
+        reset : IN std_logic; 
         rd_data1 : OUT std_logic_vector(31 downto 0) ; 
         rd_data2 : OUT std_logic_vector(31 downto 0)     
-	);
+  );
 end component;
 
 component memory is
@@ -800,7 +799,7 @@ port(
         read_enable : IN std_logic;
         clock : IN std_logic;    
         rd_data : OUT std_logic_vector(31 downto 0)  
-	);
+  );
 end component;
 
 component program_counter is
@@ -808,69 +807,69 @@ port(
         wr_data : IN  std_logic_vector(5 downto 0);
         write_enable : IN std_logic;
         read_enable : IN std_logic;
-        clock : IN std_logic;	
+        clock : IN std_logic; 
         rd_data : OUT std_logic_vector(5 downto 0) 
-	);
+  );
 end component; 
 
 component mux_2_5 is
 port(
         data1: IN  std_logic_vector(5 downto 0);
-        data2: IN  std_logic_vector(5 downto 0);	
+        data2: IN  std_logic_vector(5 downto 0);  
         cntrl : IN std_logic;
         data : OUT std_logic_vector(5 downto 0)  
-	);
+  );
 end component;
 
 component mux_2_3 is
 port(
         data1: IN  std_logic_vector(3 downto 0);
-        data2: IN  std_logic_vector(3 downto 0);	
+        data2: IN  std_logic_vector(3 downto 0);  
         cntrl : IN std_logic;
         data : OUT std_logic_vector(3 downto 0)  
-	);
+  );
 end component;
 
 component mux_2_31 is 
 port(
         data1: IN  std_logic_vector(31 downto 0);
-        data2: IN  std_logic_vector(31 downto 0);	
+        data2: IN  std_logic_vector(31 downto 0); 
         cntrl : IN std_logic;
         data : OUT std_logic_vector(31 downto 0)  
-	);
+  );
 end component;
 
 component mux_4 is
 port(
         data1: IN  std_logic_vector(31 downto 0);
         data3: IN  std_logic_vector(31 downto 0);
-        data4: IN  std_logic_vector(31 downto 0);	
+        data4: IN  std_logic_vector(31 downto 0); 
         cntrl : IN std_logic_vector(1 downto 0);
         data : OUT std_logic_vector(31 downto 0)  
-	);
+  );
 end component;
 
 component register_31 is
 port(
         wr : IN  std_logic_vector(31 downto 0);
         enable: IN std_logic;
-        clock : IN std_logic;	
+        clock : IN std_logic; 
         rd : OUT std_logic_vector(31 downto 0)     
-	);
+  );
 end component;
 
 component s2 is
     port(
-        data1: IN  std_logic_vector(23 downto 0);	
+        data1: IN  std_logic_vector(23 downto 0); 
         data : OUT std_logic_vector(31 downto 0)  
-	);
+  );
 end component;
 
 component ex is 
 port(
-        data1: IN  std_logic_vector(11 downto 0);	
+        data1: IN  std_logic_vector(11 downto 0); 
         data : OUT std_logic_vector(31 downto 0) := (others => '0') 
-	);
+  );
 end component;
 
 component register_3 is
@@ -929,12 +928,21 @@ shi <= '1';
 
 
 alu1 : alu port map
+<<<<<<< HEAD
+( op1 => alu_input1,
+  op2 => alu_input2, 
+  result => alu_output,
+  flags => flags,
+  operation => alu_op,
+  carry => F1(1)  
+=======
 (	op1 => alu_input1,
 	op2 => alu_input2, 
 	result => alu_output,
 	flags => flags,
 	operation => alu_op,
 	carry => F1(1)	
+>>>>>>> 2b74420e6f0d210812e257a1d8d20d3c25a4b485
 );
 
 pc : program_counter port map
@@ -958,7 +966,7 @@ memory_unit : memory port map
         addr => memory_input_addr, 
         write_enable => MW,
         read_enable => MR,
-        clock => clock,	
+        clock => clock, 
         rd_data => memory_output_data
 
 );
@@ -970,7 +978,7 @@ register_file_unit : register_file port map
         rd_addr2 => rd_addr2,
         write_enable => RW,
         clock => clock,
-        reset => reset,	
+        reset => reset, 
         rd_data1 => rd_data1, 
         rd_data2 => rd_data2 
     
@@ -1007,23 +1015,23 @@ Mul_write_address_in_file : mux_2_3 port map
 
 extension_for_immediate : ex port map 
     (
-        data1 => immediate_operand,	
+        data1 => immediate_operand, 
         data => operand_ext
-	);  
+  );  
 
 
 signextension_for_branch_offset : s2 port map 
     (
-        data1 => branch_offset,	
+        data1 => branch_offset, 
         data => branch_offset_ext
-	);
+  );
 
 Processor_memory_path : p_m_path port map
 (   
     processor_input => rd_data2_register,
     memory_input => memory_output_data, 
     inst_type => p_m_path_op, 
-    byte_offset =>  byte_offset, 	
+    byte_offset =>  byte_offset,  
     processor_output => dr_input,
     memory_output => memory_input_data,
     write_enables => write_enable_for_memory    
@@ -1076,10 +1084,10 @@ shifter_unit : shifter port map
     shift_type => shift_type, 
     shift_amount => shift_amount,       
     shift_enable => shift_enable,
-    shift_carry => flags(1),	
+    shift_carry => flags(1),  
     result => alu_input2     
-	);
-	
+  );
+  
 multiplier_before_alu : multiplier port map
        (    op1 => alu_input1,
             op2 => alu_input2,    
@@ -1117,6 +1125,9 @@ F <= F1;
 --    F <= flags when '1',
 --         "0000" when others;
 
+<<<<<<< HEAD
+end datapath;
+=======
 end datapath;
 
 
@@ -1128,3 +1139,4 @@ end datapath;
 
 
 
+>>>>>>> 2b74420e6f0d210812e257a1d8d20d3c25a4b485
