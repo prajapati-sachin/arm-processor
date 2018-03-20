@@ -116,6 +116,7 @@ port(
     DT_Load : OUT std_logic;
     DT_U : OUT std_logic;
     DT_immediate : OUT std_logic_vector(11 downto 0);
+    B : OUT std_logic;
     S : OUT std_logic  
     );
 end Instr_decoder;
@@ -126,6 +127,7 @@ begin
         begin
         case Instruction(27 downto 26) is
             when "00" =>  F <= "00"; 
+                          S<=Instruction(20);
                           ----------------------------------------------------------------------
                           --DP immediate
                           -- Operand is immediate
@@ -142,6 +144,7 @@ begin
                                ShTyp <= "11";
                                Sh_amount <= Instruction(11 downto 8) + Instruction(11 downto 8);  
                                Sh_imm <= '1';
+                               
                           ----------------------------------------------------
                           else
                             ------------------------------------------------------------------------
@@ -227,6 +230,7 @@ begin
                           
             
             when "10" =>  F<="10";
+                          B<= '1';
                           alu_op <= "0100";
             
             when others => INVALID <= '1';
@@ -236,6 +240,104 @@ begin
 end Instr_decoder;
 
 
+---------------------------------------------------------------------------------------------------------------
+--Controller_FSM
+-----------------------------------------------------------------------------------------------------------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+USE ieee.std_logic_unsigned.all;
+entity controller_fsm is
+port(   stat: In std_logic;
+        clock: IN std_logic;
+        F : In std_logic_vector(1 downto 0);  
+        DP_imm: In std_logic;
+        no_result: In std_logic;
+        INVALID: In std_logic;
+        immediate: In std_logic_vector(7 downto 0);
+        alu_op: In std_logic_vector(3 downto 0);
+        ShTyp : In std_logic_vector(3 downto 0);
+        Sh_amount : In std_logic_vector(7 downto 0);
+        mul: In std_logic;
+        mla: In std_logic;
+        Sh_imm : In std_logic;
+        DT_reg : In std_logic;
+        DT_post: In std_logic;
+        DT_Byte: In std_logic;
+        DT_Writeback: In std_logic;
+        DT_Load : In std_logic;
+        DT_U : In std_logic;
+        DT_immediate : In std_logic_vector(11 downto 0);
+        B : In std_logic;
+        S : In std_logic  
 
+    );
+end controller_fsm;
 
+architecture controller_fsm of controller_fsm is
+type State IS (     
+                   fetch,
+                   rdAB,
+                   rdrs,
+                   arith,
+                   wrRF,--bith dt and dp
+                   addr,
+                   wrM,
+                   rdM,
+                   M2RF,
+                   lr,
+                   brn                   
+);
+signal curr_state :State := fetch;
+begin
+    process(clock)
+    begin
+        if clock'event  and clock ='1' then
+            if curr_state = fetch then
+                curr_state <= rdAB;
+            end if;
+            if curr_state = rdAB then
+                if F = "00" then
+                    if sh_imm = '0' then
+                        curr_state <= rdrs;
+                    else
+                        curr_state <= arith;
+                    end if;
+                elsif F = "01" then
+                    curr_state <= addr;
+                elsif F = "10" then
+                    curr_state <= brn;
+                end if;
+            end if;
+            if curr_state = rdrs then
+                curr_state <= arith;
+            end if;
+            if curr_state = arith then
+                curr_state <= wrRF;
+            end if;
+            if curr_state = wrRF then
+                curr_state <= fetch;
+            end if;
+            if curr_state = arith then
+                if DT_load = '0' then
+                    curr_state <= wrM;
+                else 
+                    curr_state <= rdM;
+                end if;
+            end if;
+            if curr_state = wrM then
+                curr_state <= wrRF;
+            end if;
+            if curr_state = rdM then
+                curr_state <= M2RF;
+            end if;
+            if curr_state = M2RF then
+                curr_state <= wrRF;
+            end if;
+            if curr_state = brn then
+                curr_state <= fetch;
+            end if;
+        end if;
+    end process;
+end controller_fsm;
 
