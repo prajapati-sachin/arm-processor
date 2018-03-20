@@ -106,8 +106,8 @@ port(
     alu_op: OUT std_logic_vector(3 downto 0);
     ShTyp : OUT std_logic_vector(3 downto 0);
     Sh_amount : OUT std_logic_vector(7 downto 0);
-    mul: OUT std_logic;
-    mla: OUT std_logic;
+    alu_e: OUT std_logic;
+    mla_e: OUT std_logic;
     Sh_imm : OUT std_logic;
     DT_reg : OUT std_logic;
     DT_post: OUT std_logic;
@@ -132,6 +132,7 @@ begin
                           --DP immediate
                           -- Operand is immediate
                           if Instruction(25) = '1' then
+                               alu_e <= '1';
                                DP_imm <= '1' ;
                                alu_op  <= Instruction(24 downto 21);
                                --if instruction is of cmp, tst type 
@@ -150,6 +151,7 @@ begin
                             ------------------------------------------------------------------------
                             -- DP ShAmt imm
                             if Instruction(4) <= '0' then
+                                alu_e <= '1';
                                 DP_imm <= '0';
                                 alu_op <= Instruction(24 downto 21);
                                  --if instruction is of cmp, tst type 
@@ -170,6 +172,7 @@ begin
                                         Invalid <= '1';
                                     else   
                                        -- DP ShAmt register
+                                        alu_e <= '1';
                                         DP_imm <= '0';
                                         alu_op <= Instruction(24 downto 21);
                                         --if instruction is of cmp, tst type 
@@ -188,9 +191,11 @@ begin
                                     if Instruction(6 downto 5) = "00" then
                                         if Instruction(24 downto 23) = "00" then
                                             if Instruction(21) = '0' then
-                                                mul <= '1';
+                                                alu_e <= '0';
+                                                mla_e <= '0';
                                             else
-                                                mla <= '1';
+                                                alu_e <= '0';
+                                                mla_e <= '1';
                                             end if;
                                         end if;
                                     else 
@@ -247,8 +252,8 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 USE ieee.std_logic_unsigned.all;
-entity controller_fsm is
-port(   stat: In std_logic;
+entity main_controller is
+port(
         clock: IN std_logic;
         F : In std_logic_vector(1 downto 0);  
         DP_imm: In std_logic;
@@ -258,8 +263,8 @@ port(   stat: In std_logic;
         alu_op: In std_logic_vector(3 downto 0);
         ShTyp : In std_logic_vector(3 downto 0);
         Sh_amount : In std_logic_vector(7 downto 0);
-        mul: In std_logic;
-        mla: In std_logic;
+        alu_e: IN std_logic;
+        mla_e: In std_logic;
         Sh_imm : In std_logic;
         DT_reg : In std_logic;
         DT_post: In std_logic;
@@ -272,13 +277,14 @@ port(   stat: In std_logic;
         S : In std_logic  
 
     );
-end controller_fsm;
+end main_controller;
 
-architecture controller_fsm of controller_fsm is
+architecture main_controller of main_controller is
 type State IS (     
                    fetch,
                    rdAB,
                    rdrs,
+                   mul,
                    arith,
                    wrRF,--bith dt and dp
                    addr,
@@ -298,10 +304,14 @@ begin
             end if;
             if curr_state = rdAB then
                 if F = "00" then
-                    if sh_imm = '0' then
-                        curr_state <= rdrs;
+                    if alu_e = '1' then
+                        if sh_imm = '0' then
+                            curr_state <= rdrs;
+                        else
+                            curr_state <= arith;
+                        end if;
                     else
-                        curr_state <= arith;
+                        curr_state <= mul;
                     end if;
                 elsif F = "01" then
                     curr_state <= addr;
@@ -315,6 +325,13 @@ begin
             if curr_state = arith then
                 curr_state <= wrRF;
             end if;
+            if curr_state = mul then
+                if mla_e = '0' then 
+                    curr_state <= wrRF;
+                else 
+                    curr_state <= arith;
+                end if;
+            end if;            
             if curr_state = wrRF then
                 curr_state <= fetch;
             end if;
@@ -339,5 +356,10 @@ begin
             end if;
         end if;
     end process;
-end controller_fsm;
+    
+    process(curr_state,F,DP_imm,no_result,INVALID,immediate,alu_op,ShTyp,Sh_amount,alu_e,mla_e,Sh_imm ,DT_reg,DT_post,DT_Byte,DT_Writeback,DT_Load ,DT_U ,DT_immediate ,B ,S  )
+    begin
+        
+    end process;      
+end main_controller;
 
