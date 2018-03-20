@@ -87,6 +87,121 @@ begin
     
 end Actrl;
 
+---------------------------------------------------------------------------------------------------------------
+--INSTRUCTION DECODER
+-----------------------------------------------------------------------------------------------------------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+USE ieee.std_logic_unsigned.all;
+entity Instr_decoder is
+port(
+    Instruction: IN  std_logic_vector(31 downto 0); 
+    F : OUT std_logic_vector(1 downto 0);  
+    DP_imm: OUT std_logic;
+    no_result: OUT std_logic;
+    INVALID: OUT std_logic;
+    immediate: OUT std_logic_vector(7 downto 0);
+    alu_op: OUT std_logic_vector(3 downto 0);
+    ShTyp : OUT std_logic_vector(3 downto 0);
+    Sh_amount : OUT std_logic_vector(7 downto 0);
+    Sh_imm : OUT std_logic;
+    S : OUT std_logic  
+    );
+end Instr_decoder;
 
-
-
+architecture Instr_decoder of Instr_decoder is
+begin
+   process(Instruction)
+        begin
+        case Instruction(27 downto 26) is
+            when "00" =>  F <= "00"; 
+                          ----------------------------------------------------------------------
+                          --DP immediate
+                          -- Operand is immediate
+                          if Instruction(25) = '1' then
+                               DP_imm <= '1' ;
+                               alu_op  <= Instruction(24 downto 21);
+                               --if instruction is of cmp, tst type 
+                               if Instruction(24 downto 23) = "10" then 
+                                    no_result <= '1';
+                               else
+                                    no_result <= '0';
+                               end if;
+                               immediate <= Instruction(7 downto 0);
+                               ShTyp <= "11";
+                               Sh_amount <= Instruction(11 downto 8) + Instruction(11 downto 8);  
+                               Sh_imm <= '1';
+                          ----------------------------------------------------
+                          else
+                            ------------------------------------------------------------------------
+                            -- DP ShAmt imm
+                            if Instruction(4) <= '0' then
+                                DP_imm <= '0';
+                                alu_op <= Instruction(24 downto 21);
+                                 --if instruction is of cmp, tst type 
+                                  if Instruction(24 downto 23) = "10" then 
+                                       no_result <= '1';
+                                  else
+                                       no_result <= '0';
+                                  end if;
+                                  ShTyp <= Instruction(6 downto 5);
+                                  Sh_amount <= Instruction(11 downto 7);
+                                  Sh_imm <= '1';     
+                             ------------------------------------------------------------------------
+                              
+                            else
+                                if Instruction(7) <= '0' then 
+                                    --Instruction in invalid
+                                    if instruction(11 downto 8)= "1111" then
+                                        Invalid <= '1';
+                                    else   
+                                       -- DP ShAmt register
+                                        DP_imm <= '0';
+                                        alu_op <= Instruction(24 downto 21);
+                                        --if instruction is of cmp, tst type 
+                                        if Instruction(24 downto 23) = "10" then 
+                                             no_result <= '1';
+                                        else
+                                             no_result <= '0';
+                                        end if;
+                                        ShTyp <= Instruction(6 downto 5);
+                                        Sh_amount <= Instruction(11 downto 8);
+                                        Sh_imm <= '0';
+                                    end if;
+                                --------------------------------------------------------
+                                --Instruction(7) is 1 for MUL and MLA
+                                else                                               
+                                   if 
+                                   DP_imm <= '0';
+                                   alu_op <= Instruction(24 downto 21);
+                                   --if instruction is of cmp, tst type 
+                                   if Instruction(24 downto 23) = "10" then 
+                                        no_result <= '1';
+                                   else
+                                        no_result <= '0';
+                                   end if;
+                                   ShTyp <= Instruction(6 downto 5);
+                                   Sh_amount <= Instruction(11 downto 8);
+                                   Sh_imm <= '0';
+                               end if;
+                          
+                          
+                          
+                          
+                          
+                          
+                          
+                          
+                          
+                          
+                          end if;
+            when "01" =>
+            
+            when "10" =>
+            
+            when others => 
+                
+        end case;
+   end process;
+end Instr_decoder;
