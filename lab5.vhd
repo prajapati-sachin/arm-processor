@@ -58,8 +58,9 @@ use IEEE.NUMERIC_STD.ALL;
 USE ieee.std_logic_unsigned.all;
 entity Actrl is
 port(
-    state: IN  std_logic_vector(3 downto 0);    
-    instr: IN  std_logic_vector(3 downto 0);
+    F : IN  std_logic_vector(1 downto 0);  
+    DP_op: IN  std_logic_vector(3 downto 0);    
+    DT_U: IN  std_logic;
     alu_op : OUT std_logic_vector(3 downto 0)
     );
 end Actrl;
@@ -70,17 +71,17 @@ signal dt : std_logic;
 signal br : std_logic;
 signal mla : std_logic;
 begin
-    process(instr,state)
+    process(DP_op,DT_U,F)
     begin
-        if dp = '1' then
-            alu_op <= instr;
-        elsif dt = '1' then 
-            if instr(23) = '1' then
+        if F = "00" then
+            alu_op <= DP_op;
+        elsif F = "01" then 
+            if DT_U = '1' then
                 alu_op <= "0100";
             else
                 alu_op <= "0010";
             end if;
-        elsif br = '1' then 
+        elsif F="10" then 
             alu_op <= "0100";
         end if;
     end process;
@@ -108,11 +109,16 @@ port(
     mul: OUT std_logic;
     mla: OUT std_logic;
     Sh_imm : OUT std_logic;
+    DT_reg : OUT std_logic;
+    DT_post: OUT std_logic;
+    DT_Byte: OUT std_logic;
+    DT_Writeback: OUT std_logic;
+    DT_Load : OUT std_logic;
+    DT_U : OUT std_logic;
+    DT_immediate : OUT std_logic_vector(11 downto 0);
     S : OUT std_logic  
     );
 end Instr_decoder;
-<<<<<<< HEAD
-=======
 
 architecture Instr_decoder of Instr_decoder is
 begin
@@ -184,14 +190,19 @@ begin
                                                 mla <= '1';
                                             end if;
                                         end if;
+                                    else 
+                                    -------------------------------------
+                                    -- halfword DT
+                                    if Instruction(22) = '0' then
+                                        --register
                                     else
-                                        
-                                                
+                                        --immediate  
+                                    end if;            
                                end if;
                           
                           
                           
-                          
+                            end if;
                           
                           
                           
@@ -199,111 +210,32 @@ begin
                           
                           
                           end if;
-            when "01" =>
-            
-            when "10" =>
-            
-            when others => 
-                
-        end case;
-   end process;
-end Instr_decoder;
-
-
->>>>>>> 2b74420e6f0d210812e257a1d8d20d3c25a4b485
-
-architecture Instr_decoder of Instr_decoder is
-begin
-   process(Instruction)
-        begin
-        case Instruction(27 downto 26) is
-            when "00" =>  F <= "00"; 
-                          ----------------------------------------------------------------------
-                          --DP immediate
-                          -- Operand is immediate
-                          if Instruction(25) = '1' then
-                               DP_imm <= '1' ;
-                               alu_op  <= Instruction(24 downto 21);
-                               --if instruction is of cmp, tst type 
-                               if Instruction(24 downto 23) = "10" then 
-                                    no_result <= '1';
-                               else
-                                    no_result <= '0';
-                               end if;
-                               immediate <= Instruction(7 downto 0);
-                               ShTyp <= "11";
-                               Sh_amount <= Instruction(11 downto 8) + Instruction(11 downto 8);  
-                               Sh_imm <= '1';
-                          ----------------------------------------------------
+                          end if;
+            when "01" =>  F <= "01";
+                          DT_reg <= Instruction(25);
+                          if Instruction(25) = '0' then
+                            DT_immediate <= Instruction(11 downto 0);
                           else
-                            ------------------------------------------------------------------------
-                            -- DP ShAmt imm
-                            if Instruction(4) <= '0' then
-                                DP_imm <= '0';
-                                alu_op <= Instruction(24 downto 21);
-                                 --if instruction is of cmp, tst type 
-                                  if Instruction(24 downto 23) = "10" then 
-                                       no_result <= '1';
-                                  else
-                                       no_result <= '0';
-                                  end if;
-                                  ShTyp <= Instruction(6 downto 5);
-                                  Sh_amount <= Instruction(11 downto 7);
-                                  Sh_imm <= '1';     
-                             ------------------------------------------------------------------------
-                              
-                            else
-                                if Instruction(7) <= '0' then 
-                                    --Instruction in invalid
-                                    if instruction(11 downto 8)= "1111" then
-                                        Invalid <= '1';
-                                    else   
-                                       -- DP ShAmt register
-                                        DP_imm <= '0';
-                                        alu_op <= Instruction(24 downto 21);
-                                        --if instruction is of cmp, tst type 
-                                        if Instruction(24 downto 23) = "10" then 
-                                             no_result <= '1';
-                                        else
-                                             no_result <= '0';
-                                        end if;
-                                        ShTyp <= Instruction(6 downto 5);
-                                        Sh_amount <= Instruction(11 downto 8);
-                                        Sh_imm <= '0';
-                                    end if;
-                                --------------------------------------------------------
-                                --Instruction(7) is 1 for MUL and MLA
-                                else                                               
-                                   if 
-                                   DP_imm <= '0';
-                                   alu_op <= Instruction(24 downto 21);
-                                   --if instruction is of cmp, tst type 
-                                   if Instruction(24 downto 23) = "10" then 
-                                        no_result <= '1';
-                                   else
-                                        no_result <= '0';
-                                   end if;
-                                   ShTyp <= Instruction(6 downto 5);
-                                   Sh_amount <= Instruction(11 downto 8);
-                                   Sh_imm <= '0';
-                               end if;
-                          
-                          
-                          
-                          
-                          
-                          
-                          
-                          
-                          
-                          
+                            ShTyp <= Instruction(6 downto 5);
+                            Sh_amount <= Instruction(11 downto 7); 
                           end if;
-            when "01" =>
+                          DT_post <= Instruction(24);
+                          DT_U <= Instruction(23);
+                          DT_Byte <= Instruction(22);
+                          DT_Writeback <= Instruction(21);
+                          DT_Load <= Instruction(20);
+                          
             
-            when "10" =>
+            when "10" =>  F<="10";
+                          alu_op <= "0100";
             
-            when others => 
+            when others => INVALID <= '1';
                 
         end case;
    end process;
 end Instr_decoder;
+
+
+
+
+
