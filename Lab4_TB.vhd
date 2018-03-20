@@ -47,29 +47,39 @@ PORT(
     );
 end component;
 
---component Datapath
---PORT ( 
---	clock, reset : in std_logic;
---	ins          : out word;
---	F            : out nibble;
---	PW           : in  std_logic;
---	IorD         : in  std_logic;
---	MR           : in  std_logic;
---	MW           : in  std_logic;
---	IW           : in  std_logic;
---	DW           : in  std_logic;
---	Rsrc         : in  std_logic;
---	M2R          : in  std_logic;
---	RW           : in  std_logic;
---	AW           : in  std_logic;
---	BW           : in  std_logic;
---	Asrc1        : in  std_logic;
---	Asrc2        : in  bit_pair;
---	Fset         : in  std_logic;
---	Op           : in  nibble;
---	ReW          : in  std_logic
---);
---end component;
+component Datapath
+PORT ( 
+        clock, reset : in std_logic;
+	ins          : out std_logic_vector(31 downto 0);
+	F            : out std_logic_vector(3 downto 0);
+	PW           : in  std_logic;
+	IorD         : in  std_logic;
+	MR           : in  std_logic;
+	MW           : in  std_logic;
+	IW           : in  std_logic;
+	DW           : in  std_logic;
+	Rsrc         : in  std_logic;
+--	Shi          : in  std_logic; --shiftamount from register
+--	Shift        : in  std_logic; --shift( from register '1' and from intruction '0')
+    Shift_amount : in std_logic_vector(4 downto 0);
+	Wsrc         : in  std_logic;
+	M2R          : in  std_logic;
+	RW           : in  std_logic;
+	AW           : in  std_logic;
+	BW           : in  std_logic;
+	Asrc1        : in  std_logic;
+	Asrc2        : in  std_logic_vector(1 downto 0);
+	MorA        : in  std_logic;
+	Fset         : in  std_logic;
+	alu_op       : in  std_logic_vector(3 downto 0);
+	p_m_path_op  : in   std_logic_vector(3 downto 0);
+	byte_offset  : in std_logic_vector(1 downto 0);
+	ReW          : in  std_logic;
+    shift_type : IN std_logic_vector(1 downto 0);  
+    shift_enable : IN std_logic 
+		
+);
+end component;
 
 
 signal temp: std_logic;
@@ -85,6 +95,10 @@ signal IR : std_logic_vector(31 downto 0);
 signal rx_uart : std_logic_vector(7 downto 0);
 signal switch_pair : std_logic_vector(1 downto 0);
 signal reset_mem : std_logic;
+signal Flags_out : std_logic_vector(3 downto 0);
+signal sft_enable : std_logic;
+signal sft_amount : std_logic_vector(4 downto 0);
+signal sft_type : std_logic_vector(1 downto 0);
 --signal Flags_out : nibble;
 begin
 
@@ -98,9 +112,9 @@ begin
 -- LEDs are currently connected to monitor the file transfer from uart to memory
  
 --DP_inst : Datapath port map(
---	clock => CLK,
+--	clk => CLK,
 --	reset => BTN(4),             
---	ins   => IR,                 
+--	instruction   => IR,                 
 --	F     => Flags_out,          
 --	PW    => dout_mem(0),        
 --	IorD  => dout_mem(1),        
@@ -117,9 +131,44 @@ begin
 --	Asrc2 => dout_mem(13 downto 12),
 --	Fset  => dout_mem(14),        
 --	Op    => dout_mem(18 downto 15),
---	ReW   => dout_mem(19)        
+--	ReW   => dout_mem(19),
+--	Mul   => '0',
+--	sft_enable => sft_enable,
+--	sft_type => sft_type,
+--	sft_amount => sft_amount
+	        
 --);
-
+ 
+ DP_inst : Datapath port map(
+     clock => CLK,
+     reset => BTN(4),
+     ins   => IR,
+     F     => Flags_out,
+     PW    => dout_mem(0),
+     IorD  => dout_mem(1),
+     MR   => dout_mem(2),
+     MW   => dout_mem(3),
+     IW   => dout_mem(4),
+     DW  => dout_mem(5),
+     Rsrc     => dout_mem(6),
+     shift_amount => sft_amount,
+     Wsrc     => '0',
+     M2R       => dout_mem(7),
+     RW      => dout_mem(8),
+     AW         => dout_mem(9),
+     BW           => dout_mem(10),
+     Asrc1       => dout_mem(11),
+     Asrc2     => dout_mem(13 downto 12),
+     MorA     => '1',
+     Fset      => dout_mem(14),
+     alu_op     => dout_mem(18 downto 15),
+     p_m_path_op  => "1001",
+     byte_offset => "00",
+     ReW        => dout_mem(19),
+     shift_type => sft_type,
+     shift_enable => sft_enable
+     
+  );
 
 
 
