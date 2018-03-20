@@ -105,6 +105,8 @@ port(
     alu_op: OUT std_logic_vector(3 downto 0);
     ShTyp : OUT std_logic_vector(3 downto 0);
     Sh_amount : OUT std_logic_vector(7 downto 0);
+    mul: OUT std_logic;
+    mla: OUT std_logic;
     Sh_imm : OUT std_logic;
     S : OUT std_logic  
     );
@@ -174,18 +176,17 @@ begin
                                 --------------------------------------------------------
                                 --Instruction(7) is 1 for MUL and MLA
                                 else                                               
-                                   if 
-                                   DP_imm <= '0';
-                                   alu_op <= Instruction(24 downto 21);
-                                   --if instruction is of cmp, tst type 
-                                   if Instruction(24 downto 23) = "10" then 
-                                        no_result <= '1';
-                                   else
-                                        no_result <= '0';
-                                   end if;
-                                   ShTyp <= Instruction(6 downto 5);
-                                   Sh_amount <= Instruction(11 downto 8);
-                                   Sh_imm <= '0';
+                                    if Instruction(6 downto 5) = "00" then
+                                        if Instruction(24 downto 23) = "00" then
+                                            if Instruction(21) = '0' then
+                                                mul <= '1';
+                                            else
+                                                mla <= '1';
+                                            end if;
+                                        end if;
+                                    else
+                                        
+                                                
                                end if;
                           
                           
