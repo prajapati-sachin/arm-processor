@@ -279,6 +279,13 @@ port(
     );
 end main_controller;
 
+-- DP instr       fetch -> rdAB -> rdrs     ->  shft        ->arith       -> wrRF 
+-- DP Mul         fetch -> rdAB -> rdrs     ->  mul         ->arith       -> wrRF
+-- DT instr(str)  fetch -> rdAB -> shft     ->  addr(rdB)   -> wrM(wrRF) 
+-- DT instr(ldr)  fetch -> rdAB -> shft     ->  addr(rdB)   -> rdM(wrRF) -> M2RF
+-- B  instr       fetch -> rdAB -> brn(wrRF)
+
+
 architecture main_controller of main_controller is
 type State IS (     
                    fetch,
@@ -286,7 +293,8 @@ type State IS (
                    rdrs,
                    mul,
                    arith,
-                   wrRF,--bith dt and dp
+                   wrRF,--both dt and dp
+                   shft,
                    addr,
                    wrM,
                    rdM,
@@ -311,16 +319,23 @@ begin
                             curr_state <= arith;
                         end if;
                     else
-                        curr_state <= mul;
+                        if mla_e = '1' then
+                            curr_state <= rdrs;
+                        else 
+                            curr_state <= mul;
+                        end if;
                     end if;
                 elsif F = "01" then
-                    curr_state <= addr;
+                    curr_state <= shft;
                 elsif F = "10" then
                     curr_state <= brn;
                 end if;
             end if;
             if curr_state = rdrs then
-                curr_state <= arith;
+                if F = "00" then
+                    curr_state <= arith;
+                else 
+                    curr_state <= mul;
             end if;
             if curr_state = arith then
                 curr_state <= wrRF;
@@ -334,6 +349,9 @@ begin
             end if;            
             if curr_state = wrRF then
                 curr_state <= fetch;
+            end if;
+            if curr_state = shft then
+                curr_state <= addr;
             end if;
             if curr_state = arith then
                 if DT_load = '0' then
