@@ -236,7 +236,7 @@ begin
             
             when "10" =>  F<="10";
                           B<= '1';
-                          alu_op <= "0100";
+                          --alu_op <= "0100";
             
             when others => INVALID <= '1';
                 
@@ -255,26 +255,40 @@ USE ieee.std_logic_unsigned.all;
 entity main_controller is
 port(
         clock: IN std_logic;
-        F : In std_logic_vector(1 downto 0);  
-        DP_imm: In std_logic;
-        no_result: In std_logic;
-        INVALID: In std_logic;
-        immediate: In std_logic_vector(7 downto 0);
-        alu_op: In std_logic_vector(3 downto 0);
-        ShTyp : In std_logic_vector(3 downto 0);
-        Sh_amount : In std_logic_vector(7 downto 0);
-        alu_e: IN std_logic;
-        mla_e: In std_logic;
-        Sh_imm : In std_logic;
-        DT_reg : In std_logic;
-        DT_post: In std_logic;
-        DT_Byte: In std_logic;
-        DT_Writeback: In std_logic;
-        DT_Load : In std_logic;
-        DT_U : In std_logic;
-        DT_immediate : In std_logic_vector(11 downto 0);
-        B : In std_logic;
-        S : In std_logic  
+ --       F : In std_logic_vector(1 downto 0);  
+        reset : out std_logic;
+        ins          : in std_logic_vector(31 downto 0);
+        F            : in std_logic_vector(3 downto 0);
+        PW           : out  std_logic;
+        IorD         : out  std_logic;
+        MR           : out  std_logic;
+        MW           : out  std_logic;
+        IW           : out  std_logic;
+        DW           : out  std_logic;
+        Rsrc         : out  std_logic;
+        Shi          : out  std_logic; --shift from register or immediate
+        Shift        : out  std_logic; --shiftamount( from register '1' and from intruction '0')
+      --   Shift_amount : out std_logic_vector(4 downto 0);
+        Wsrc         : out  std_logic;
+        M2R          : out  std_logic_vector(1 downto 0); -- selects REW , Bout or 
+        RW           : out  std_logic;
+        AW           : out  std_logic;
+        XW           : out  std_logic;
+        BW           : out  std_logic;
+        aluW           : out  std_logic;
+        mulW           : out  std_logic;
+        shftW           : out  std_logic;
+        BorS           : out  std_logic; --selects directly B or shifted B
+        Asrc1        : out  std_logic_vector(1 downto 0);
+        Asrc2        : out  std_logic_vector(1 downto 0);
+        MorA        : out  std_logic;
+        Fset         : out  std_logic;
+        alu_op       : out  std_logic_vector(3 downto 0);
+        p_m_path_op  : out   std_logic_vector(3 downto 0);
+        byte_offset  : out std_logic_vector(1 downto 0);
+        ReW          : out  std_logic;
+        shift_type : out std_logic_vector(1 downto 0);  
+        shift_enable : out std_logic  
 
     );
 end main_controller;
@@ -287,6 +301,49 @@ end main_controller;
 
 
 architecture main_controller of main_controller is
+component Instr_decoder is
+port(
+    Instruction: IN  std_logic_vector(31 downto 0); 
+    F : OUT std_logic_vector(1 downto 0);  
+    DP_imm: OUT std_logic;
+    no_result: OUT std_logic;
+    INVALID: OUT std_logic;
+    immediate: OUT std_logic_vector(7 downto 0);
+    alu_op: OUT std_logic_vector(3 downto 0);
+    ShTyp : OUT std_logic_vector(3 downto 0);
+    Sh_amount : OUT std_logic_vector(7 downto 0);
+    alu_e: OUT std_logic;
+    mla_e: OUT std_logic;
+    Sh_imm : OUT std_logic;
+    DT_reg : OUT std_logic;
+    DT_post: OUT std_logic;
+    DT_Byte: OUT std_logic;
+    DT_Writeback: OUT std_logic;
+    DT_Load : OUT std_logic;
+    DT_U : OUT std_logic;
+    DT_immediate : OUT std_logic_vector(11 downto 0);
+    B : OUT std_logic;
+    S : OUT std_logic  
+    );
+end component;
+
+component Bctrl is
+port(
+    flags: IN  std_logic_vector(3 downto 0);    
+    instr: IN  std_logic_vector(3 downto 0);
+    p : OUT std_logic 
+    );
+end component;
+
+component Actrl is
+port(
+    F : IN  std_logic_vector(1 downto 0);  
+    DP_op: IN  std_logic_vector(3 downto 0);    
+    DT_U: IN  std_logic;
+    alu_op : OUT std_logic_vector(3 downto 0)
+    );
+end component;
+
 type State IS (     
                    fetch,
                    rdAB,
@@ -302,6 +359,27 @@ type State IS (
                    brn                   
 );
 signal curr_state :State := fetch;
+signal  Fo :  std_logic_vector(1 downto 0);  
+signal  DP_imm:  std_logic;
+signal  no_result:  std_logic;
+signal  INVALID:  std_logic;
+signal  immediate:  std_logic_vector(7 downto 0);
+signal  alu_operation:  std_logic_vector(3 downto 0);
+signal  ShTyp :  std_logic_vector(3 downto 0);
+signal  Sh_amount :  std_logic_vector(7 downto 0);
+signal  alu_e:  std_logic;
+signal  mla_e:  std_logic;
+signal  Sh_imm :  std_logic;
+signal  DT_reg :  std_logic;
+signal  DT_post:  std_logic;
+signal  DT_Byte:  std_logic;
+signal  DT_Writeback:  std_logic;
+signal  DT_Load :  std_logic;
+signal  DT_U :  std_logic;
+signal  DT_immediate :  std_logic_vector(11 downto 0);
+signal  B :  std_logic;
+signal  S :  std_logic;
+signal  p:  std_logic; --predicate
 begin
     process(clock)
     begin
@@ -375,7 +453,45 @@ begin
         end if;
     end process;
     
-    process(curr_state,F,DP_imm,no_result,INVALID,immediate,alu_op,ShTyp,Sh_amount,alu_e,mla_e,Sh_imm ,DT_reg,DT_post,DT_Byte,DT_Writeback,DT_Load ,DT_U ,DT_immediate ,B ,S  )
+    instruction_decoder : Instr_decoder port map
+    (
+        Instruction => ins,
+        F  =>  Fo,
+        DP_imm => DP_imm,
+        no_result => no_result,
+        INVALID => INVALID,
+        immediate => immediate,
+        alu_op => alu_operation,
+        ShTyp  => ShTyp,
+        Sh_amount  => Sh_amount,
+        alu_e => alu_e,
+        mla_e => mla_e,
+        Sh_imm  => Sh_imm,
+        DT_reg  => DT_reg,
+        DT_post => DT_post,
+        DT_Byte => DT_Byte,
+        DT_Writeback => DT_Writeback,
+        DT_Load  => DT_Load,
+        DT_U  => DT_U,
+        DT_immediate  => DT_immediate  
+    );
+    
+    Acontrol : Actrl port map
+    (
+        F => Fo,
+        DP_op => alu_operation, 
+        DT_U => DT_U,
+        alu_op => alu_op
+    );
+    
+    Bcontrol : Bctrl port map
+    (
+        flags => F,  
+        instr => ins(31 downto 28),
+        p => p
+    );
+    
+    process( )
     begin
         
     end process;      
