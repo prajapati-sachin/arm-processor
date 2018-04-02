@@ -105,7 +105,7 @@ port(
     immediate: OUT std_logic_vector(7 downto 0);
     alu_op: OUT std_logic_vector(3 downto 0);
     ShTyp : OUT std_logic_vector(3 downto 0);
-    Sh_amount : OUT std_logic_vector(7 downto 0);
+    Sh_amount : OUT std_logic_vector(4 downto 0);
     alu_e: OUT std_logic;
     mla_e: OUT std_logic;
     Sh_imm : OUT std_logic;
@@ -226,6 +226,7 @@ begin
                           else
                             ShTyp <= Instruction(6 downto 5);
                             Sh_amount <= Instruction(11 downto 7); 
+                            sh_imm <= '1';
                           end if;
                           DT_post <= Instruction(24);
                           DT_U <= Instruction(23);
@@ -235,7 +236,7 @@ begin
                           
             
             when "10" =>  F<="10";
-                          B<= '1';
+                          B<= Instruction(24);;
                           --alu_op <= "0100";
             
             when others => INVALID <= '1';
@@ -265,11 +266,12 @@ port(
         MW           : out  std_logic;
         IW           : out  std_logic;
         DW           : out  std_logic;
-        Rsrc         : out  std_logic;
+        Rsrc1        : out  std_logic; --control signal for operand B
+        Rsrc2        : out  std_logic; --control signal for operand A
         Shi          : out  std_logic; --shift from register or immediate
         Shift        : out  std_logic; --shiftamount( from register '1' and from intruction '0')
-      --   Shift_amount : out std_logic_vector(4 downto 0);
-        Wsrc         : out  std_logic;
+        Shift_amount : out std_logic_vector(7 downto 0);
+        Wsrc         : out  std_logic_vector(1 downto 0);
         M2R          : out  std_logic_vector(1 downto 0); -- selects REW , Bout or 
         RW           : out  std_logic;
         AW           : out  std_logic;
@@ -388,12 +390,12 @@ begin
                 curr_state <= rdAB;
             end if;
             if curr_state = rdAB then
-                if F = "00" then
+                if Fo = "00" then
                     if alu_e = '1' then
                         if sh_imm = '0' then
                             curr_state <= rdrs;
                         else
-                            curr_state <= arith;
+                            curr_state <= shft;
                         end if;
                     else
                         if mla_e = '1' then
@@ -402,14 +404,14 @@ begin
                             curr_state <= mul;
                         end if;
                     end if;
-                elsif F = "01" then
+                elsif Fo = "01" then
                     curr_state <= shft;
-                elsif F = "10" then
+                elsif Fo = "10" then
                     curr_state <= brn;
                 end if;
             end if;
             if curr_state = rdrs then
-                if F = "00" then
+                if Fo = "00" then
                     curr_state <= arith;
                 else 
                     curr_state <= mul;
@@ -429,7 +431,11 @@ begin
                 curr_state <= fetch;
             end if;
             if curr_state = shft then
-                curr_state <= addr;
+                if Fo = "00" then
+                    curr_state <= arith;
+                else
+                    curr_state <= addr;
+                end if;
             end if;
             if curr_state = addr then
                 if DT_load = '0' then
@@ -491,9 +497,111 @@ begin
         p => p
     );
     
-    process( )
+    process(curr_state,Fo,DP_imm,no_result,INVALID,immediate,alu_operation,ShTyp,Sh_amount,alu_e,mla_e,Sh_imm ,DT_reg ,DT_post,DT_Byte,DT_Writeback,DT_Load ,DT_U ,DT_immediate,B,S,p )
     begin
-        
+        if curr_state = fetch then
+            IorD <= '0';
+            PW <= '1';
+            IW <= '1';
+            DW <= '0';
+            alu_op <= "0100";
+            MR <= '1';
+            Asrc1 <= "10";
+            Asrc2 <= "01";
+        elsif curr_state = rdAB then
+            AW <= '1';
+            BW <= '1';
+            Rsrc2 <= '0';
+            Rsrc1 <= '0';
+        elsif curr_state = rdrs then
+            XW <= '1';
+            Rsrc2 <= '1';
+        elsif curr_state = shft then
+            shift <= sh_imm;  --shift amount is immediate or from register
+            if DP_imm = '1' then
+                shi <= '0';
+            else 
+                shi <= '1' ;
+            end if;
+            if Fo = "01" then
+                shi <= '1';
+            end if;
+            shift_type <= shTyp;
+            shift_amount <= sh_amount;
+            shftW <= '1';
+        elsif curr_state = mul then
+            mulW <= '1';
+            if mla_e = '0' then
+                MorA <= '0';
+                ReW <= '1';
+            else 
+                REW <= '0';
+            end if;
+        elsif curr_state = arith then
+            if alu_e = '1' then
+                Asrc1 <= "00";
+                BorS <= '1';
+                Asrc2 <= "00";   
+            elsif mla_e = '1' then
+                Asrc1 <= "01";
+                BorS <= '0';
+                Asrc2 <= "00";
+            end if;
+            aluW <='1';
+            MorA <= '1';
+            ReW <= '1';
+        elsif curr_state = wrRF then
+            RW <= p;
+            Wsrc <= "00";
+            M2R <= "01";
+        elsif curr_state = addr then
+            Asrc1 <= "00";
+            if DT_reg = '1' then
+                Asrc2 <= "10";
+            else
+                BorS <= '1';
+                Asrc2 <= "00";
+            end if;
+            aluW <='1';
+            BW <= '1';
+            Rsrc1 <= '1';
+        elsif curr_state = wrM then
+            MW <= p;
+            --half full and byte
+            if DT_Writeback = '1' then
+                RW <= p;
+                Wsrc <= "01";
+                M2R <= "10";
+            else 
+                RW <= '0';
+            end if;
+        elsif curr_state = rdM then
+            IorD <= '1';
+            MR <= '1';
+            IW <= '0';
+            DW <= '1';
+            if DT_Writeback = '1' then
+                RW <= p;
+                Wsrc <= "01";
+                M2R <= "10";
+            else 
+                RW <= '0';
+            end if;
+        elsif curr_state = M2RF then
+            RW <= p;
+            --half full and byte
+            M2R <= "10";
+        elsif curr_state = brn then
+            pw <= p;
+            Asrc1 <= "10";
+            Asrc2 <= "11";
+            aluW <='1';
+            if B = '1' then
+                RW <= '1';
+                Wsrc <= "10";
+                M2R <= "01";
+            end if;
+        end if;
     end process;      
 end main_controller;
 
