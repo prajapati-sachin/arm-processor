@@ -562,6 +562,7 @@ USE ieee.std_logic_unsigned.all;
 entity mux_4 is
 port(
     data1: IN  std_logic_vector(31 downto 0);
+    data2: IN  std_logic_vector(31 downto 0);
     data3: IN  std_logic_vector(31 downto 0);
     data4: IN  std_logic_vector(31 downto 0); 
     cntrl : IN std_logic_vector(1 downto 0);
@@ -570,7 +571,7 @@ port(
 end mux_4;
 
 architecture mux of mux_4 is
-signal data2: std_logic_vector(31 downto 0):="00000000000000000000000000000100";
+--signal data2: std_logic_vector(31 downto 0):="00000000000000000000000000000100";
 begin
     with cntrl select
         data <= data1 when "00",
@@ -710,15 +711,20 @@ PORT (
   IW           : in  std_logic;
   DW           : in  std_logic;
   Rsrc         : in  std_logic;
---  Shi          : in  std_logic; --shiftamount from register
---  Shift        : in  std_logic; --shift( from register '1' and from intruction '0')
-    Shift_amount : in std_logic_vector(4 downto 0);
+  Shi          : in  std_logic; --shift from register or immediate
+  Shift        : in  std_logic; --shiftamount( from register '1' and from intruction '0')
+--   Shift_amount : in std_logic_vector(4 downto 0);
   Wsrc         : in  std_logic;
-  M2R          : in  std_logic;
+  M2R          : in  std_logic_vector(1 downto 0); -- selects REW , Bout or 
   RW           : in  std_logic;
   AW           : in  std_logic;
+  XW           : in  std_logic;
   BW           : in  std_logic;
-  Asrc1        : in  std_logic;
+  aluW           : in  std_logic;
+  mulW           : in  std_logic;
+  shftW           : in  std_logic;
+  BorS           : in  std_logic; --selects directly B or shifted B
+  Asrc1        : in  std_logic_vector(1 downto 0);
   Asrc2        : in  std_logic_vector(1 downto 0);
   MorA        : in  std_logic;
   Fset         : in  std_logic;
@@ -726,8 +732,8 @@ PORT (
   p_m_path_op  : in   std_logic_vector(3 downto 0);
   byte_offset  : in std_logic_vector(1 downto 0);
   ReW          : in  std_logic;
-    shift_type : IN std_logic_vector(1 downto 0);  
-    shift_enable : IN std_logic    
+  shift_type : IN std_logic_vector(1 downto 0);  
+  shift_enable : IN std_logic    
 );
 end datapath;
 
@@ -842,6 +848,7 @@ end component;
 component mux_4 is
 port(
         data1: IN  std_logic_vector(31 downto 0);
+        data2: IN  std_logic_vector(31 downto 0);
         data3: IN  std_logic_vector(31 downto 0);
         data4: IN  std_logic_vector(31 downto 0); 
         cntrl : IN std_logic_vector(1 downto 0);
@@ -886,11 +893,11 @@ end component;
 signal pc_output : std_logic_vector(5 downto 0) := (others => '0') ;
 signal memory_input_addr : std_logic_vector(5 downto 0) := (others => '0') ;
 signal res_output : std_logic_vector(31 downto 0) := (others => '0') ;
-signal memory_input_data : std_logic_vector(31 downto 0) := (others => '0') ;
-signal memory_output_data : std_logic_vector(31 downto 0) := (others => '0') ;
+signal memory_input_data : std_logic_vector(31 downto 0) := (others => '0') ; --output for pm path
+signal memory_output_data : std_logic_vector(31 downto 0) := (others => '0') ; -- direct output from memory
 signal instruction : std_logic_vector(31 downto 0) := (others => '0') ;
-signal dr_output : std_logic_vector(31 downto 0) := (others => '0') ;
-signal dr_input : std_logic_vector(31 downto 0) := (others => '0') ;
+signal dr_output : std_logic_vector(31 downto 0) := (others => '0') ; --input from pm path
+signal mem_out : std_logic_vector(31 downto 0) := (others => '0') ; --output from pm path
 signal rd_addr1 : std_logic_vector(3 downto 0) := (others => '0') ;
 signal rd_addr2 : std_logic_vector(3 downto 0) := (others => '0') ;
 signal rd_addr2_1 : std_logic_vector(3 downto 0) := (others => '0') ;
@@ -902,11 +909,19 @@ signal operand_ext: std_logic_vector(31 downto 0) := (others => '0') ;
 signal wr_data : std_logic_vector(31 downto 0) := (others => '0') ;
 signal rd_data1 : std_logic_vector(31 downto 0) := (others => '0') ;
 signal rd_data2 : std_logic_vector(31 downto 0) := (others => '0') ;
-signal rd_data1_register : std_logic_vector(31 downto 0) := (others => '0') ;
-signal rd_data2_register : std_logic_vector(31 downto 0) := (others => '0') ;
+signal A_out : std_logic_vector(31 downto 0) := (others => '0') ;
+signal B_out : std_logic_vector(31 downto 0) := (others => '0') ; --input for pm path
+signal B_out_1 : std_logic_vector(31 downto 0) := (others => '0') ;
+signal X_out : std_logic_vector(31 downto 0) := (others => '0') ;
+signal shft_out : std_logic_vector(31 downto 0) := (others => '0') ;--output for shift register
+signal shft_in : std_logic_vector(31 downto 0) := (others => '0') ;--input for shift register
+signal mul_out : std_logic_vector(31 downto 0) := (others => '0') ;--output for mul register
+signal mul_in : std_logic_vector(31 downto 0) := (others => '0') ;--input for mul register
+signal alu_out : std_logic_vector(31 downto 0) := (others => '0') ;--output for alu register
+signal alu_in : std_logic_vector(31 downto 0) := (others => '0') ;--input for alu register
 signal alu_input1 : std_logic_vector(31 downto 0) := (others => '0') ;
 signal alu_input2 : std_logic_vector(31 downto 0) := (others => '0') ;
-signal alu_output : std_logic_vector(31 downto 0) := (others => '0') ;
+signal shft_input : std_logic_vector(31 downto 0) := (others => '0') ;--input for shifter_unit
 signal data_addr : std_logic_vector(31 downto 0) := (others => '0') ;
 signal flags : std_logic_vector(3 downto 0) := (others => '0') ;
 signal F1 : std_logic_vector(3 downto 0) := (others => '0') ;
@@ -914,27 +929,16 @@ signal write_enable_for_memory : std_logic_vector(3 downto 0) := (others => '0')
 signal pc_extended : std_logic_vector(31 downto 0) := (others => '0') ;
 signal output_asrc1 : std_logic_vector(31 downto 0) := (others => '0') ;
 signal output_asrc2 : std_logic_vector(31 downto 0) := (others => '0') ;
-signal multiplier_output : std_logic_vector(31 downto 0) := (others => '0') ;
 signal final_output : std_logic_vector(31 downto 0) := (others => '0') ;
-signal shi : std_logic ;
+signal shift_amount : std_logic_vector(4 downto 0) := (others => '0') ;
+--signal shi : std_logic ;
 
 begin
 branch_offset <= instruction(23 downto 0);
 immediate_operand <= instruction(11 downto 0);
 pc_extended(5 downto 0) <= pc_output(5 downto 0);
-shi <= '1';
+--shi <= '1';
 
-
-
-
-alu1 : alu port map
-(	op1 => alu_input1,
-	op2 => alu_input2, 
-	result => alu_output,
-	flags => flags,
-	operation => alu_op,
-	carry => F1(1)	
-);
 
 pc : program_counter port map
 (   wr_data => final_output(5 downto 0),
@@ -944,7 +948,8 @@ pc : program_counter port map
     rd_data => pc_output
 );
 
-IorD_mux : mux_2_5 port map
+--mux aftet program counter register to fetch instrucyion or write in memory
+IorD_mux : mux_2_5 port map  
 (   data1 => pc_output,
     data2 => res_output(5 downto 0),
     cntrl => IorD,
@@ -962,6 +967,62 @@ memory_unit : memory port map
 
 );
 
+IR : register_31 port map
+(   wr => memory_output_data,
+    enable => IW,
+    clock => clock,
+    rd => instruction
+);
+
+
+DR : register_31 port map
+(   wr => memory_output_data,
+    enable => DW,
+    clock => clock,
+    rd => dr_output
+);
+
+Mul_read_address1_in_file : mux_2_3 port map
+(   data1 => instruction(19 downto 16),--rn
+    data2 => instruction(11 downto 8),--rs
+    cntrl => Shi,
+    data => rd_addr1
+);
+
+Mul_read_address2_in_file : mux_2_3 port map
+(   data1 => instruction(3 downto 0),--rm
+    data2 => instruction(15 downto 12),--rd
+    cntrl => Rsrc,
+    data => rd_addr2
+); 
+ 
+Mul_write_address_in_file : mux_2_3 port map
+(   data1 => instruction(15 downto 12),--rd
+   data2 => instruction(19 downto 16),--rn
+   cntrl => Wsrc,
+   data => wr_addr
+);   
+
+Mul_write_data_in_file : mux_4 port map
+(  data1 => pc_extended,
+   data2 => res_output,
+   data3 => mem_out,
+   data4 => "00000000000000000000000000000000",    
+   cntrl => M2R,
+   data =>  wr_data
+); 
+
+Processor_memory_path : p_m_path port map
+(   
+    processor_input => B_out,
+    memory_input => dr_output, 
+    inst_type => p_m_path_op, 
+    byte_offset =>  byte_offset,  
+    processor_output => mem_out,
+    memory_output => memory_input_data,
+    write_enables => write_enable_for_memory    
+);
+
 register_file_unit : register_file port map
 (       wr_data => wr_data,
         wr_addr => wr_addr,
@@ -975,34 +1036,7 @@ register_file_unit : register_file port map
     
 );
 
-
-IR : register_31 port map
-(   wr => memory_output_data,
-    enable => IW,
-    clock => clock,
-    rd => instruction
-);
-
-Mul_read_address1_in_file : mux_2_3 port map
-(   data1 => instruction(19 downto 16),
-    data2 => instruction(11 downto 8),
-    cntrl => Shi,
-    data => rd_addr1
-);
-
-Mul_read_address2_in_file : mux_2_3 port map
-(   data1 => instruction(3 downto 0),
-    data2 => instruction(15 downto 12),
-    cntrl => Rsrc,
-    data => rd_addr2
-);    
-  
-Mul_write_address_in_file : mux_2_3 port map
-(   data1 => instruction(15 downto 12),
-    data2 => instruction(19 downto 16),
-    cntrl => Wsrc,
-    data => wr_addr
-);  
+ 
 
 extension_for_immediate : ex port map 
     (
@@ -1017,78 +1051,118 @@ signextension_for_branch_offset : s2 port map
         data => branch_offset_ext
   );
 
-Processor_memory_path : p_m_path port map
-(   
-    processor_input => rd_data2_register,
-    memory_input => memory_output_data, 
-    inst_type => p_m_path_op, 
-    byte_offset =>  byte_offset,  
-    processor_output => dr_input,
-    memory_output => memory_input_data,
-    write_enables => write_enable_for_memory    
-);
 
-DR : register_31 port map
-(   wr => dr_input,
-    enable => DW,
-    clock => clock,
-    rd => dr_output
-);
-
+--register for operand A after registerfile
 A : register_31 port map
 (   wr => rd_data1,
     enable => AW,
     clock => clock,
-    rd => rd_data1_register
+    rd => A_out
 );
-
+--register for operand X(shift amount) after registerfile
+X : register_31 port map
+(   wr => rd_data1,
+    enable => XW,
+    clock => clock,
+    rd => X_out
+);
+--register for operand B after registerfile
 B : register_31 port map
 (   wr => rd_data2,
     enable => BW,
     clock => clock,
-    rd => rd_data2_register
+    rd => B_out
 );
-   
-Mul_for_asrc1 : mux_2_31 port map
-(   data1 => rd_data1_register,
-    data2 => pc_extended,
+--register after shft
+shift_register : register_31 port map
+(   wr => shft_in,
+    enable => shftW,
+    clock => clock,
+    rd => shft_out
+);
+--register after mul
+mul_register : register_31 port map
+(   wr => mul_in,
+    enable => mulW,
+    clock => clock,
+    rd => mul_out
+);
+--register after alu
+alu_register : register_31 port map
+(   wr => rd_data2,
+    enable => aluW,
+    clock => clock,
+    rd => alu_out
+);
+--multiplexer for alu_input1  
+Mul_for_asrc1 : mux_4 port map
+(   data1 => A_out,
+    data2 => mul_out,
+    data3 => pc_extended,
+    data4 => "00000000000000000000000000000000",
     cntrl => Asrc1,
     data => alu_input1
 ); 
+--multiplexer for choosing b directly or shifted B
+Mul_for_B : mux_2_31 port map
+(   data1 => B_out,
+    data2 => shft_out,
+    cntrl => BorS,
+    data => B_out_1
+); 
 
+--multiplexer for alu_input2
 Mul_for_asrc2 : mux_4 port map
-(  data1 => rd_data2_register,
+(  data1 => B_out_1,
+   data2 => "00000000000000000000000000000100",
    data3 => operand_ext,
    data4 => branch_offset_ext,    
    cntrl => Asrc2,
    data =>  output_asrc2
 ); 
+--multiplexer for shift_input1
+Mul_for_shifter : mux_2_31 port map
+(   data1 => B_out,
+    data2 => operand_ext,
+    cntrl => shi,
+    data => shft_input
+); 
 
---with shift select 
---    shift_amount <= rd_data1 when '1',
---                    instruction(11 downto 7) when others;
+with shift select 
+    shift_amount <= X_out when '1',
+                    instruction(11 downto 7) when others;
        
 
 shifter_unit : shifter port map
 (
-    op1 => output_asrc2,
+    op1 => shft_input,
     shift_type => shift_type, 
     shift_amount => shift_amount,       
     shift_enable => shift_enable,
     shift_carry => flags(1),  
-    result => alu_input2     
+    result => shft_in
   );
   
-multiplier_before_alu : multiplier port map
-       (    op1 => alu_input1,
-            op2 => alu_input2,    
-            result => multiplier_output,
+multiplier_unit : multiplier port map
+       (    op1 => A_out,
+            op2 => B_out,    
+            result => mul_in,
             flags => flags        
         );
 
+
+alu_unit : alu port map
+( op1 => alu_input1,
+  op2 => alu_input2, 
+  result => alu_in,
+  flags => flags,
+  operation => alu_op,
+  carry => F1(1)  
+);
+
 Mux_for_final_output : mux_2_31 port map
-(   data1 => multiplier_output,
-    data2 => alu_output,
+(   data1 => mul_out,
+    data2 => alu_out,
     cntrl => MorA,
     data => final_output
 );

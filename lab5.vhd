@@ -299,7 +299,6 @@ type State IS (
                    wrM,
                    rdM,
                    M2RF,
-                   lr,
                    brn                   
 );
 signal curr_state :State := fetch;
@@ -336,6 +335,7 @@ begin
                     curr_state <= arith;
                 else 
                     curr_state <= mul;
+                end if;
             end if;
             if curr_state = arith then
                 curr_state <= wrRF;
@@ -353,7 +353,7 @@ begin
             if curr_state = shft then
                 curr_state <= addr;
             end if;
-            if curr_state = arith then
+            if curr_state = addr then
                 if DT_load = '0' then
                     curr_state <= wrM;
                 else 
