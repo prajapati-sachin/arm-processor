@@ -1198,12 +1198,12 @@ multiplier_unit : multiplier port map
 
 
 alu_unit : alu port map
-(	op1 => alu_input1,
-	op2 => alu_input2, 
-	result => alu_in,
-	flags => flags,
-	operation => alu_op,
-	carry => F1(1)	
+( op1 => alu_input1,
+  op2 => alu_input2, 
+  result => alu_in,
+  flags => flags,
+  operation => alu_op,
+  carry => F1(1)  
 );
 
 Mux_for_final_output : mux_2_31 port map

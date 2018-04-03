@@ -112,6 +112,7 @@ port(
     DT_reg : OUT std_logic;
     DT_post: OUT std_logic;
     DT_Byte: OUT std_logic;
+    DT_Half: OUT std_logic;
     DT_Writeback: OUT std_logic;
     DT_Load : OUT std_logic;
     DT_U : OUT std_logic;
@@ -203,8 +204,20 @@ begin
                                     -- halfword DT
                                     if Instruction(22) = '0' then
                                         --register
+                                        DT_reg <= '1';
+                                        DT_post <= Instruction(24);
+                                        DT_U <= Instruction(23);
+                                        DT_Half <= '1';
+                                        DT_Writeback <= Instruction(21);
+                                        DT_Load <= Instruction(20);
                                     else
                                         --immediate  
+                                        DT_reg <= '0';
+                                        DT_post <= Instruction(24);
+                                        DT_U <= Instruction(23);
+                                        DT_Half <= '1';
+                                        DT_Writeback <= Instruction(21);
+                                        DT_Load <= Instruction(20);
                                     end if;            
                                end if;
                           
@@ -320,6 +333,7 @@ port(
     DT_reg : OUT std_logic;
     DT_post: OUT std_logic;
     DT_Byte: OUT std_logic;
+    DT_Half: OUT std_logic;
     DT_Writeback: OUT std_logic;
     DT_Load : OUT std_logic;
     DT_U : OUT std_logic;
@@ -375,6 +389,7 @@ signal  Sh_imm :  std_logic;
 signal  DT_reg :  std_logic;
 signal  DT_post:  std_logic;
 signal  DT_Byte:  std_logic;
+signal  DT_Half:  std_logic;
 signal  DT_Writeback:  std_logic;
 signal  DT_Load :  std_logic;
 signal  DT_U :  std_logic;
@@ -476,6 +491,7 @@ begin
         DT_reg  => DT_reg,
         DT_post => DT_post,
         DT_Byte => DT_Byte,
+        DT_Half => DT_Half,
         DT_Writeback => DT_Writeback,
         DT_Load  => DT_Load,
         DT_U  => DT_U,
@@ -567,6 +583,15 @@ begin
             Rsrc1 <= '1';
         elsif curr_state = wrM then
             MW <= p;
+            if DT_half = '1' then
+                p_m_path_op <= "0010";
+                byte_offset <= "01";
+            elsif DT_Byte = '1' then
+                p_m_path_op <= "0101";
+                byte_offset <= "11";
+            else
+                p_m_path_op <="0001";
+            end if;
             --half full and byte
             if DT_Writeback = '1' then
                 RW <= p;
@@ -589,6 +614,15 @@ begin
             end if;
         elsif curr_state = M2RF then
             RW <= p;
+            if DT_half = '1' then
+                p_m_path_op <= "0011";
+                byte_offset <= "01";
+            elsif DT_Byte = '1' then
+                p_m_path_op <= "0101";
+                byte_offset <= "11";
+            else
+                p_m_path_op <="0001";
+            end if;
             --half full and byte
             M2R <= "10";
         elsif curr_state = brn then
