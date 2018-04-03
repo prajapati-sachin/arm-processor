@@ -104,7 +104,7 @@ port(
     INVALID: OUT std_logic;
     immediate: OUT std_logic_vector(7 downto 0);
     alu_op: OUT std_logic_vector(3 downto 0);
-    ShTyp : OUT std_logic_vector(3 downto 0);
+    ShTyp : OUT std_logic_vector(1 downto 0);
     Sh_amount : OUT std_logic_vector(4 downto 0);
     alu_e: OUT std_logic;
     mla_e: OUT std_logic;
@@ -123,6 +123,7 @@ port(
 end Instr_decoder;
 
 architecture Instr_decoder of Instr_decoder is
+signal temp_amount : std_logic_vector(4 downto 0):= "00000";
 begin
    process(Instruction)
         begin
@@ -144,7 +145,9 @@ begin
                                end if;
                                immediate <= Instruction(7 downto 0);
                                ShTyp <= "11";
-                               Sh_amount <= Instruction(11 downto 8) + Instruction(11 downto 8);  
+                               temp_amount(3 downto 0) <= Instruction(11 downto 8) ;  
+                               sh_amount <= temp_amount + temp_amount;  
+                               
                                Sh_imm <= '1';
                                
                           ----------------------------------------------------
@@ -183,7 +186,7 @@ begin
                                              no_result <= '0';
                                         end if;
                                         ShTyp <= Instruction(6 downto 5);
-                                        Sh_amount <= Instruction(11 downto 8);
+                                        
                                         Sh_imm <= '0';
                                     end if;
                                 --------------------------------------------------------
@@ -248,9 +251,10 @@ begin
                           DT_Load <= Instruction(20);
                           
             
-            when "10" =>  F<="10";
-                          B<= Instruction(24);;
+            when "10" =>  F <="10";
+                          B <= Instruction(24);
                           --alu_op <= "0100";
+                          
             
             when others => INVALID <= '1';
                 
@@ -283,7 +287,7 @@ port(
         Rsrc2        : out  std_logic; --control signal for operand A
         Shi          : out  std_logic; --shift from register or immediate
         Shift        : out  std_logic; --shiftamount( from register '1' and from intruction '0')
-        Shift_amount : out std_logic_vector(7 downto 0);
+        Shift_amount : out std_logic_vector(4 downto 0);
         Wsrc         : out  std_logic_vector(1 downto 0);
         M2R          : out  std_logic_vector(1 downto 0); -- selects REW , Bout or 
         RW           : out  std_logic;
@@ -325,8 +329,8 @@ port(
     INVALID: OUT std_logic;
     immediate: OUT std_logic_vector(7 downto 0);
     alu_op: OUT std_logic_vector(3 downto 0);
-    ShTyp : OUT std_logic_vector(3 downto 0);
-    Sh_amount : OUT std_logic_vector(7 downto 0);
+    ShTyp : OUT std_logic_vector(1 downto 0);
+    Sh_amount : OUT std_logic_vector(4 downto 0);
     alu_e: OUT std_logic;
     mla_e: OUT std_logic;
     Sh_imm : OUT std_logic;
@@ -381,8 +385,8 @@ signal  no_result:  std_logic;
 signal  INVALID:  std_logic;
 signal  immediate:  std_logic_vector(7 downto 0);
 signal  alu_operation:  std_logic_vector(3 downto 0);
-signal  ShTyp :  std_logic_vector(3 downto 0);
-signal  Sh_amount :  std_logic_vector(7 downto 0);
+signal  ShTyp :  std_logic_vector(1 downto 0);
+signal  Sh_amount :  std_logic_vector(4 downto 0);
 signal  alu_e:  std_logic;
 signal  mla_e:  std_logic;
 signal  Sh_imm :  std_logic;
@@ -515,6 +519,37 @@ begin
     
     process(curr_state,Fo,DP_imm,no_result,INVALID,immediate,alu_operation,ShTyp,Sh_amount,alu_e,mla_e,Sh_imm ,DT_reg ,DT_post,DT_Byte,DT_Writeback,DT_Load ,DT_U ,DT_immediate,B,S,p )
     begin
+    PW           <= '0';
+    IorD         <= '0';
+    MR           <= '0';
+    MW           <= '0';
+    IW           <= '0';
+    DW           <= '0';
+    Rsrc1        <= '0'; --control signal for operand B
+    Rsrc2        <= '0';--control signal for operand A
+    Shi          <= '0'; --shift from register or immediate
+    Shift        <= '0'; --shiftamount( from register '1' and from intruction '0')
+    Shift_amount <= "00000";
+    Wsrc         <="00";
+    M2R          <="00"; -- selects REW , Bout or 
+    RW           <= '0';
+    AW           <= '0';
+    XW           <= '0';
+    BW           <= '0';
+    aluW           <= '0';
+    mulW           <= '0';
+    shftW           <= '0';
+    BorS           <= '0'; --selects directly B or shifted B
+    Asrc1        <="00";
+    Asrc2        <="00";
+    MorA        <= '0';
+    Fset         <= '0';
+    alu_op       <="0100";
+    p_m_path_op  <= "0000";
+    byte_offset  <="00";
+    ReW          <= '0';
+    shift_type <="00" ;
+    shift_enable <= '1';
         if curr_state = fetch then
             IorD <= '0';
             PW <= '1';
