@@ -430,10 +430,10 @@ begin
                 end if;
             end if;
             if curr_state = rdrs then
-                if Fo = "00" then
-                    curr_state <= arith;
-                else 
+                if mla_e = '1'then
                     curr_state <= mul;
+                else
+                    curr_state <= shft;
                 end if;
             end if;
             if curr_state = arith then
@@ -499,7 +499,9 @@ begin
         DT_Writeback => DT_Writeback,
         DT_Load  => DT_Load,
         DT_U  => DT_U,
-        DT_immediate  => DT_immediate  
+        DT_immediate  => DT_immediate,
+        B => B,
+        S => S  
     );
     
     Acontrol : Actrl port map

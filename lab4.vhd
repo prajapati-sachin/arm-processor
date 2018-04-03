@@ -1042,8 +1042,8 @@ Mul_read_address2_in_file : mux_2_3 port map
 Mul_write_address_in_file : mux_4_4 port map
 (   data1 => instruction(15 downto 12),--rd
    data2 => instruction(19 downto 16),--rn
-   data3 => "00000000000000000000000000001110",
-   data4 => "00000000000000000000000000001110",
+   data3 => "1110",
+   data4 => "1110",
    cntrl => Wsrc,
    data => wr_addr
 );   
