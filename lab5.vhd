@@ -66,25 +66,30 @@ port(
 end Actrl;
 
 architecture Actrl of Actrl is
-signal dp : std_logic;
-signal dt : std_logic;
-signal br : std_logic;
-signal mla : std_logic;
+signal d : std_logic_vector(2 downto 0);
 begin
-    process(DP_op,DT_U,F)
-    begin
-        if F = "00" then
-            alu_op <= DP_op;
-        elsif F = "01" then 
-            if DT_U = '1' then
-                alu_op <= "0100";
-            else
-                alu_op <= "0010";
-            end if;
-        elsif F="10" then 
-            alu_op <= "0100";
-        end if;
-    end process;
+    d(1 downto 0) <= F;
+    d(2) <= DT_U;
+    with d select
+        alu_op <= DP_op when "000",
+                  DP_op when "100",
+                  "0100"when "101",
+                  "0010"when "001",
+                  "0100"when others;
+--    process(DP_op,DT_U,F)
+--    begin
+--        if F = "00" then
+--            alu_op <= DP_op;
+--        elsif F = "01" then 
+--            if DT_U = '1' then
+--                alu_op <= "0100";
+--            else
+--                alu_op <= "0010";
+--            end if;
+--        elsif F="10" then 
+--            alu_op <= "0100";
+--        end if;
+--    end process;
     
 end Actrl;
 
@@ -341,7 +346,7 @@ port(
     DT_Half: OUT std_logic;
     DT_Writeback: OUT std_logic;
     DT_Load : OUT std_logic;
-    DT_U : OUT std_logic;
+    DT_U : OUT std_logic := '0';
     DT_immediate : OUT std_logic_vector(11 downto 0);
     B : OUT std_logic;
     S : OUT std_logic  
@@ -623,9 +628,14 @@ begin
             ReW <= '1';
         elsif curr_state = wrRF then
             if alu_e = '1' then
-                RW <= p;
+               
                 Wsrc <= "00";
                 M2R <= "01";
+                if no_result = '1' then
+                    RW <= '0';
+                else
+                    RW <= p;
+                end if;
             else 
                 RW <= p;
                 Wsrc <= "01";

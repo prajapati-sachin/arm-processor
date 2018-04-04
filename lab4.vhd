@@ -530,6 +530,29 @@ begin
 end mux;
 
 ---------------------------------------------------------------------------------------------------------------
+--MUX_2_4bit
+-----------------------------------------------------------------------------------------------------------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+USE ieee.std_logic_unsigned.all;
+entity mux_2_4 is
+port(
+    data1: IN  std_logic_vector(4 downto 0);
+    data2: IN  std_logic_vector(4 downto 0);  
+    cntrl : IN std_logic;
+  data : OUT std_logic_vector(4 downto 0)  
+  );
+end mux_2_4;
+
+architecture mux of mux_2_4 is
+begin
+    with cntrl select
+        data <= data1 when '0',
+                data2 when others;
+end mux;
+
+---------------------------------------------------------------------------------------------------------------
 --MUX_2_31bit
 -----------------------------------------------------------------------------------------------------------
 library IEEE;
@@ -856,6 +879,15 @@ port(
         data2: IN  std_logic_vector(5 downto 0);  
         cntrl : IN std_logic;
         data : OUT std_logic_vector(5 downto 0)  
+  );
+end component;
+
+component mux_2_4 is
+port(
+        data1: IN  std_logic_vector(4 downto 0);
+        data2: IN  std_logic_vector(4 downto 0);  
+        cntrl : IN std_logic;
+        data : OUT std_logic_vector(4 downto 0)  
   );
 end component;
 
@@ -1186,10 +1218,16 @@ Mul_for_shifter : mux_2_31 port map
     data => shft_input
 ); 
 
-
-with shift select 
-    shft_amount <= X_out when '0',
-                    shift_amount when others;
+--multiplexer for shift_amount
+Mul_for_shiftamount : mux_2_4 port map
+(   data1 => X_out(4 downto 0),
+    data2 => shift_amount,
+    cntrl => shift,
+    data => shft_amount
+);
+--with shift select 
+--    shft_amount <= X_out when '0',
+--                    shift_amount when others;
        
 
 shifter_unit : shifter port map
