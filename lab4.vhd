@@ -233,7 +233,7 @@ port(
     rd_addr1 : IN std_logic_vector(3 downto 0); 
     rd_addr2 : IN std_logic_vector(3 downto 0); 
     write_enable : IN std_logic;
-    clock : IN std_logic;
+   -- clock : IN std_logic;
     reset : IN std_logic; 
   rd_data1 : OUT std_logic_vector(31 downto 0) ; 
   rd_data2 : OUT std_logic_vector(31 downto 0)     
@@ -249,13 +249,13 @@ signal num2 : Integer;
 begin
     rd_data1 <= registers(to_integer(unsigned(rd_addr1)));
     rd_data2 <= registers(to_integer(unsigned(rd_addr2)));
-    process(clock, reset)
+    process( reset)
        begin
-       if clock'event and clock = '1' then
+      -- if clock'event and clock = '1' then
             if write_enable = '1' then 
                 registers(to_integer(unsigned(wr_addr)))<= wr_data;
             end if;
-        end if;
+       -- end if;
         if reset = '1' then 
             registers(0) <= "00000000000000000000000000000000";
             registers(1) <= "00000000000000000000000000000000";
@@ -459,7 +459,7 @@ port(
     
     write_enable : IN std_logic;
     read_enable : IN std_logic;
-    clock : IN std_logic; 
+  --  clock : IN std_logic; 
   rd_data : OUT std_logic_vector(5 downto 0) 
       
   );
@@ -468,15 +468,15 @@ end program_counter;
 architecture program_counter of program_counter is
 signal pc : std_logic_vector(5 downto 0);
 begin
-    process(wr_data,clock,write_enable,read_enable)
+    process(wr_data,write_enable,read_enable)
         begin
         if read_enable = '1' then
             rd_data <= pc;
         end if;  
         if write_enable ='1' then
-            if clock'event and clock = '1' then
+           -- if clock'event and clock = '1' then
                 pc <= wr_data;
-            end if;
+            --end if;
         end if;
     end process;
 
@@ -618,8 +618,8 @@ USE ieee.std_logic_unsigned.all;
 entity register_31 is
 port(
     wr : IN  std_logic_vector(31 downto 0);
-    enable: IN std_logic;
-    clock : IN std_logic; 
+    enable: IN std_logic; 
+    --clock : IN std_logic;  
   rd : OUT std_logic_vector(31 downto 0)  
   );
 end register_31;
@@ -628,13 +628,13 @@ architecture register_31 of register_31 is
 signal data : std_logic_vector(31 downto 0);
 begin
     rd <= data;
-    process(wr,clock,enable)
+    process(wr,enable)
         begin
-        if clock'event and clock = '1' then
-            if enable ='1' then
+        --if clock'event and clock = '1' then
+        if enable ='1' then
                 data <= wr;
-            end if;
         end if;
+        --end if;
     end process;
 
 end register_31;
@@ -649,8 +649,8 @@ USE ieee.std_logic_unsigned.all;
 entity register_3 is
 port(
     wr : IN  std_logic_vector(3 downto 0);
-    enable: IN std_logic;
-    clock : IN std_logic;    
+    enable: IN std_logic; 
+    --clock : IN std_logic;   
     rd : OUT std_logic_vector(3 downto 0)  
     );
 end register_3;
@@ -659,13 +659,13 @@ architecture register_3 of register_3 is
 signal data : std_logic_vector(3 downto 0);
 begin
     rd <= data;
-    process(wr,clock,enable)
-        begin
-        if clock'event and clock = '1' then
-            if enable ='1' then
+    process(wr,enable)
+    begin
+        --if clock'event and clock = '1' then
+        if enable ='1' then
                 data <= wr;
-            end if;
         end if;
+        --end if;
     end process;
 
 end register_3;
@@ -730,7 +730,8 @@ use IEEE.NUMERIC_STD.ALL;
 USE ieee.std_logic_unsigned.all;
 entity datapath is
 PORT ( 
-  clock, reset : in std_logic;
+  clock        : in std_logic;
+  reset        : in std_logic;
   ins          : out std_logic_vector(31 downto 0);
   F            : out std_logic_vector(3 downto 0);
   PW           : in  std_logic;
@@ -819,7 +820,7 @@ port(
         rd_addr1 : IN std_logic_vector(3 downto 0); 
         rd_addr2 : IN std_logic_vector(3 downto 0); 
         write_enable : IN std_logic;
-        clock : IN std_logic;
+       -- clock : IN std_logic;
         reset : IN std_logic; 
         rd_data1 : OUT std_logic_vector(31 downto 0) ; 
         rd_data2 : OUT std_logic_vector(31 downto 0)     
@@ -843,7 +844,7 @@ port(
         wr_data : IN  std_logic_vector(5 downto 0);
         write_enable : IN std_logic;
         read_enable : IN std_logic;
-        clock : IN std_logic; 
+      --  clock : IN std_logic; 
         rd_data : OUT std_logic_vector(5 downto 0) 
   );
 end component; 
@@ -901,7 +902,7 @@ component register_31 is
 port(
         wr : IN  std_logic_vector(31 downto 0);
         enable: IN std_logic;
-        clock : IN std_logic; 
+     --   clock : IN std_logic; 
         rd : OUT std_logic_vector(31 downto 0)     
   );
 end component;
@@ -924,7 +925,7 @@ component register_3 is
 port(
         wr : IN  std_logic_vector(3 downto 0);
         enable: IN std_logic;
-        clock : IN std_logic;    
+     --   clock : IN std_logic;    
         rd : OUT std_logic_vector(3 downto 0)  
     );
 end component;
@@ -987,7 +988,7 @@ pc : program_counter port map
 (   wr_data => final_output(5 downto 0),
     write_enable => PW,
     read_enable => '1',
-    clock => clock,
+   -- clock => clock,
     rd_data => pc_output
 );
 
@@ -1013,7 +1014,7 @@ memory_unit : memory port map
 IR : register_31 port map
 (   wr => memory_output_data,
     enable => IW,
-    clock => clock,
+   -- clock => clock,
     rd => instruction
 );
 
@@ -1021,7 +1022,7 @@ IR : register_31 port map
 DR : register_31 port map
 (   wr => memory_output_data,
     enable => DW,
-    clock => clock,
+   -- clock => clock,
     rd => dr_output
 );
 
@@ -1074,7 +1075,7 @@ register_file_unit : register_file port map
         rd_addr1 => rd_addr1,
         rd_addr2 => rd_addr2,
         write_enable => RW,
-        clock => clock,
+       -- clock => clock,
         reset => reset, 
         rd_data1 => rd_data1, 
         rd_data2 => rd_data2 
@@ -1101,42 +1102,42 @@ signextension_for_branch_offset : s2 port map
 A : register_31 port map
 (   wr => rd_data1,
     enable => AW,
-    clock => clock,
+   -- clock => clock,
     rd => A_out
 );
 --register for operand X(shift amount) after registerfile
 X : register_31 port map
 (   wr => rd_data1,
     enable => XW,
-    clock => clock,
+  --  clock => clock,
     rd => X_out
 );
 --register for operand B after registerfile
 B : register_31 port map
 (   wr => rd_data2,
     enable => BW,
-    clock => clock,
+  --  clock => clock,
     rd => B_out
 );
 --register after shft
 shift_register : register_31 port map
 (   wr => shft_in,
     enable => shftW,
-    clock => clock,
+  --  clock => clock,
     rd => shft_out
 );
 --register after mul
 mul_register : register_31 port map
 (   wr => mul_in,
     enable => mulW,
-    clock => clock,
+  --  clock => clock,
     rd => mul_out
 );
 --register after alu
 alu_register : register_31 port map
 (   wr => rd_data2,
     enable => aluW,
-    clock => clock,
+ --   clock => clock,
     rd => alu_out
 );
 --multiplexer for alu_input1  
@@ -1217,14 +1218,14 @@ Mux_for_final_output : mux_2_31 port map
 RES : register_31 port map
 (   wr =>final_output,
     enable => ReW,
-    clock => clock,
+ --   clock => clock,
     rd => res_output
 );
 
 Flag : register_3 port map
 (   wr => flags,
     enable => Fset,
-    clock => clock,    
+  --  clock => clock,    
     rd => F1  
 );
 F <= F1;

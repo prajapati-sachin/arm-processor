@@ -272,9 +272,9 @@ use IEEE.NUMERIC_STD.ALL;
 USE ieee.std_logic_unsigned.all;
 entity main_controller is
 port(
-        clock: IN std_logic;
+        clock        : IN std_logic;
  --       F : In std_logic_vector(1 downto 0);  
-        reset : out std_logic;
+        reset        : in std_logic;
         ins          : in std_logic_vector(31 downto 0);
         F            : in std_logic_vector(3 downto 0);
         PW           : out  std_logic;
@@ -464,13 +464,13 @@ begin
                 end if;
             end if;
             if curr_state = wrM then
-                curr_state <= wrRF;
+                curr_state <= fetch;
             end if;
             if curr_state = rdM then
                 curr_state <= M2RF;
             end if;
             if curr_state = M2RF then
-                curr_state <= wrRF;
+                curr_state <= fetch;
             end if;
             if curr_state = brn then
                 curr_state <= fetch;
@@ -600,6 +600,9 @@ begin
                 BorS <= '0';
                 Asrc2 <= "00";
             end if;
+            if S = '1' then
+                Fset <= '1';
+            end if;
             aluW <='1';
             MorA <= '1';
             ReW <= '1';
@@ -610,16 +613,18 @@ begin
         elsif curr_state = addr then
             Asrc1 <= "00";
             if DT_reg = '1' then
-                Asrc2 <= "10";
-            else
                 BorS <= '1';
                 Asrc2 <= "00";
+            else
+                BorS <= '1';
+                Asrc2 <= "10";
             end if;
             aluW <='1';
             BW <= '1';
             Rsrc1 <= '1';
         elsif curr_state = wrM then
             MW <= p;
+            IorD <= '1';
             if DT_half = '1' then
                 p_m_path_op <= "0010";
                 byte_offset <= "01";
