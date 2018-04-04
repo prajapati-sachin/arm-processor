@@ -36,10 +36,11 @@ PORT (
   AW           : in  std_logic;
   XW           : in  std_logic;
   BW           : in  std_logic;
+  YW           : in  std_logic;
   aluW           : in  std_logic;
   mulW           : in  std_logic;
   shftW           : in  std_logic;
-  BorS           : in  std_logic; --selects directly B or shifted B
+  BorS           : in  std_logic_vector(1 downto 0); --selects directly B or shifted B
   Asrc1        : in  std_logic_vector(1 downto 0);
   Asrc2        : in  std_logic_vector(1 downto 0);
   MorA        : in  std_logic;
@@ -77,10 +78,11 @@ port(
         AW           : out  std_logic;
         XW           : out  std_logic;
         BW           : out  std_logic;
+        YW           : out  std_logic;
         aluW           : out  std_logic;
         mulW           : out  std_logic;
         shftW           : out  std_logic;
-        BorS           : out  std_logic; --selects directly B or shifted B
+        BorS           : out  std_logic_vector(1 downto 0); --selects directly B or shifted B
         Asrc1        : out  std_logic_vector(1 downto 0);
         Asrc2        : out  std_logic_vector(1 downto 0);
         MorA        : out  std_logic;
@@ -114,10 +116,11 @@ end component;
   signal AW           :   std_logic;
   signal XW           :   std_logic;
   signal BW           :   std_logic;
+  signal YW           :   std_logic;
   signal aluW         :   std_logic;
   signal mulW         :   std_logic;
   signal shftW        :   std_logic;
-  signal BorS         :   std_logic; 
+  signal BorS         :   std_logic_vector(1 downto 0); 
   signal Asrc1        :   std_logic_vector(1 downto 0);
   signal Asrc2        :   std_logic_vector(1 downto 0);
   signal MorA         :   std_logic;
@@ -154,6 +157,7 @@ datapath_unit : datapath port map
     AW           => AW,
     XW           => XW,
     BW           => BW,
+    YW           => YW,
     aluW         => aluW,
     mulW         => mulW,
     shftW        => shftW,
@@ -193,6 +197,7 @@ controller: main_controller port map
     AW           => AW,
     XW           => XW,
     BW           => BW,
+    YW           => YW,
     aluW         => aluW,
     mulW         => mulW,
     shftW        => shftW,

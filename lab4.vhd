@@ -751,10 +751,11 @@ PORT (
   AW           : in  std_logic;
   XW           : in  std_logic;
   BW           : in  std_logic;
+  YW           : in  std_logic;
   aluW           : in  std_logic;
   mulW           : in  std_logic;
   shftW           : in  std_logic;
-  BorS           : in  std_logic; --selects directly B or shifted B
+  BorS           : in  std_logic_vector(1 downto 0); --selects directly B or shifted B
   Asrc1        : in  std_logic_vector(1 downto 0);
   Asrc2        : in  std_logic_vector(1 downto 0);
   MorA        : in  std_logic;
@@ -954,6 +955,7 @@ signal rd_data1 : std_logic_vector(31 downto 0) := (others => '0') ;
 signal rd_data2 : std_logic_vector(31 downto 0) := (others => '0') ;
 signal A_out : std_logic_vector(31 downto 0) := (others => '0') ;
 signal B_out : std_logic_vector(31 downto 0) := (others => '0') ; --input for pm path
+signal Y_out : std_logic_vector(31 downto 0) := (others => '0') ;
 signal B_out_1 : std_logic_vector(31 downto 0) := (others => '0') ;
 signal X_out : std_logic_vector(31 downto 0) := (others => '0') ;
 signal shft_out : std_logic_vector(31 downto 0) := (others => '0') ;--output for shift register
@@ -1119,6 +1121,14 @@ B : register_31 port map
   --  clock => clock,
     rd => B_out
 );
+--register for operand B after registerfile for mla instruction
+Y : register_31 port map
+(   wr => rd_data2,
+    enable => YW,
+  --  clock => clock,
+    rd => Y_out
+);
+
 --register after shft
 shift_register : register_31 port map
 (   wr => shft_in,
@@ -1150,9 +1160,11 @@ Mul_for_asrc1 : mux_4 port map
     data => alu_input1
 ); 
 --multiplexer for choosing b directly or shifted B
-Mul_for_B : mux_2_31 port map
+Mul_for_B : mux_4 port map
 (   data1 => B_out,
     data2 => shft_out,
+    data3 => Y_out,
+    data4 => Y_out,
     cntrl => BorS,
     data => B_out_1
 ); 

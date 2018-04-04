@@ -294,10 +294,11 @@ port(
         AW           : out  std_logic;
         XW           : out  std_logic;
         BW           : out  std_logic;
+        YW           : out  std_logic;
         aluW           : out  std_logic;
         mulW           : out  std_logic;
         shftW           : out  std_logic;
-        BorS           : out  std_logic; --selects directly B or shifted B
+        BorS           : out  std_logic_vector(1 downto 0); --selects directly B or shifted B or mla
         Asrc1        : out  std_logic_vector(1 downto 0);
         Asrc2        : out  std_logic_vector(1 downto 0);
         MorA        : out  std_logic;
@@ -522,18 +523,18 @@ begin
     process(curr_state,Fo,DP_imm,no_result,INVALID,immediate,alu_operation,ShTyp,Sh_amount,alu_e,mla_e,Sh_imm ,DT_reg ,DT_post,DT_Byte,DT_Writeback,DT_Load ,DT_U ,DT_immediate,B,S,p )
     begin
     PW           <= '0';
-    IorD         <= '0';
+   -- IorD         <= '0';
     MR           <= '0';
     MW           <= '0';
     IW           <= '0';
     DW           <= '0';
-    Rsrc1        <= '0'; --control signal for operand B
-    Rsrc2        <= '0';--control signal for operand A
-    Shi          <= '0'; --shift from register or immediate
-    Shift        <= '0'; --shiftamount( from register '1' and from intruction '0')
+  --  Rsrc1        <= '0'; --control signal for operand B
+  --  Rsrc2        <= '0';--control signal for operand A
+  --  Shi          <= '0'; --shift from register or immediate
+  --  Shift        <= '0'; --shiftamount( from register '1' and from intruction '0')
     Shift_amount <= "00000";
     Wsrc         <="00";
-    M2R          <="00"; -- selects REW , Bout or 
+   -- M2R          <="01"; -- selects REW , Bout or 
     RW           <= '0';
     AW           <= '0';
     XW           <= '0';
@@ -541,10 +542,10 @@ begin
     aluW           <= '0';
     mulW           <= '0';
     shftW           <= '0';
-    BorS           <= '0'; --selects directly B or shifted B
-    Asrc1        <="00";
-    Asrc2        <="00";
-    MorA        <= '0';
+  --  BorS           <= '0'; --selects directly B or shifted B
+  --  Asrc1        <="00";
+  --  Asrc2        <="00";
+  --  MorA        <= '0';
     Fset         <= '0';
     alu_op       <="0100";
     p_m_path_op  <= "0000";
@@ -564,11 +565,25 @@ begin
         elsif curr_state = rdAB then
             AW <= '1';
             BW <= '1';
-            Rsrc2 <= '0';
-            Rsrc1 <= '0';
+            if Fo = "00" then
+                if alu_e = '1' then
+                    Rsrc2 <= '0';
+                    Rsrc1 <= '0';
+                else
+                    Rsrc2 <= '1';
+                    Rsrc1 <= '0';
+                end if;
+            else
+                Rsrc2 <= '0';
+                Rsrc1 <= '0';
+            end if;
         elsif curr_state = rdrs then
             XW <= '1';
             Rsrc2 <= '1';
+            if mla_e = '1' then
+                YW <= '1';
+                Rsrc1 <= '1';
+            end if;
         elsif curr_state = shft then
             shift <= sh_imm;  --shift amount is immediate or from register
             if DP_imm = '1' then
@@ -593,30 +608,37 @@ begin
         elsif curr_state = arith then
             if alu_e = '1' then
                 Asrc1 <= "00";
-                BorS <= '1';
+                BorS <= "01";
                 Asrc2 <= "00";   
             elsif mla_e = '1' then
                 Asrc1 <= "01";
-                BorS <= '0';
+                BorS <= "10";
                 Asrc2 <= "00";
             end if;
             if S = '1' then
-                Fset <= '1';
+                Fset <= p;
             end if;
             aluW <='1';
             MorA <= '1';
             ReW <= '1';
         elsif curr_state = wrRF then
-            RW <= p;
-            Wsrc <= "00";
-            M2R <= "01";
+            if alu_e = '1' then
+                RW <= p;
+                Wsrc <= "00";
+                M2R <= "01";
+            else 
+                RW <= p;
+                Wsrc <= "01";
+                M2R <= "01";
+            end if;
+                
         elsif curr_state = addr then
             Asrc1 <= "00";
             if DT_reg = '1' then
-                BorS <= '1';
+                BorS <= "01";
                 Asrc2 <= "00";
             else
-                BorS <= '1';
+                BorS <= "01";
                 Asrc2 <= "10";
             end if;
             aluW <='1';
