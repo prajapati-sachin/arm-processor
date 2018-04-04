@@ -249,7 +249,7 @@ signal num2 : Integer;
 begin
     rd_data1 <= registers(to_integer(unsigned(rd_addr1)));
     rd_data2 <= registers(to_integer(unsigned(rd_addr2)));
-    process( reset)
+    process( write_enable,wr_addr,reset)
        begin
       -- if clock'event and clock = '1' then
             if write_enable = '1' then 
@@ -1135,7 +1135,7 @@ mul_register : register_31 port map
 );
 --register after alu
 alu_register : register_31 port map
-(   wr => rd_data2,
+(   wr => alu_in,
     enable => aluW,
  --   clock => clock,
     rd => alu_out
@@ -1164,7 +1164,7 @@ Mul_for_asrc2 : mux_4 port map
    data3 => operand_ext,
    data4 => branch_offset_ext,    
    cntrl => Asrc2,
-   data =>  output_asrc2
+   data =>  alu_input2
 ); 
 --multiplexer for shift_input1
 Mul_for_shifter : mux_2_31 port map
