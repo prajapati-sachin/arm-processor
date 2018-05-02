@@ -7,7 +7,17 @@ use IEEE.NUMERIC_STD.ALL;
 USE ieee.std_logic_unsigned.all;
 entity data_control is
 port(
-    clock : IN std_logic;
+    clk : IN std_logic;
+    push_button : IN std_logic;
+    hready       : in std_logic;
+    hsize        : out  std_logic_vector(2 downto 0);
+    HWDATA       : out std_logic_vector(31 downto 0);
+    M           : out  std_logic;
+    MemR          :out    std_logic;
+    MemW           :out    std_logic;
+    HADDR       : out std_logic_vector(15 downto 0);
+    HRDATA       : in std_logic_vector(31 downto 0);
+    reg          : out std_logic_vector(31 downto 0);
     reset : IN std_logic
     );
 end data_control;
@@ -16,8 +26,11 @@ architecture data_control of data_control is
 component datapath is 
 PORT ( 
   clock        : in std_logic;
+  push_button : IN std_logic;
   reset        : in std_logic;
+  pr           : out std_logic; 
   ins          : out std_logic_vector(31 downto 0);
+  reg          : out std_logic_vector(31 downto 0);
   F            : out std_logic_vector(3 downto 0);
   PW           : in  std_logic;
   IorD         : in  std_logic;
@@ -49,6 +62,9 @@ PORT (
   p_m_path_op  : in   std_logic_vector(3 downto 0);
   byte_offset  : in std_logic_vector(1 downto 0);
   ReW          : in  std_logic;
+  HWDATA       : out std_logic_vector(31 downto 0);
+  HADDR       : out std_logic_vector(15 downto 0);
+  HRDATA       : in std_logic_vector(31 downto 0);
   shift_type : IN std_logic_vector(1 downto 0);  
   shift_enable : IN std_logic    
 );
@@ -57,9 +73,14 @@ end component;
 component main_controller is
 port(
         clock        : IN std_logic;
+        push_button        : IN std_logic;
  --       F : In std_logic_vector(1 downto 0);  
         reset        : in std_logic;
+        pr           : in std_logic; 
         ins          : in std_logic_vector(31 downto 0);
+        hready       : in std_logic;
+        hsize        : out  std_logic_vector(2 downto 0);
+        M            : out  std_logic;
         F            : in std_logic_vector(3 downto 0);
         PW           : out  std_logic;
         IorD         : out  std_logic;
@@ -131,14 +152,20 @@ end component;
   signal ReW          :   std_logic;
   signal shift_type   :   std_logic_vector(1 downto 0);  
   signal shift_enable :   std_logic;  
+  signal regl   :   std_logic_vector(31 downto 0);  
+  signal write  :    std_logic;
+  signal pr : std_logic; 
 
 begin
 
 datapath_unit : datapath port map
 ( 
-    clock        => clock,
+    clock        => clk,
+    push_button  => push_button,
     reset        => reset,
+    pr =>           pr,
     ins          => ins,
+    reg          => regl,
     F            => F,
     PW           => PW,
     IorD         => IorD,
@@ -170,15 +197,23 @@ datapath_unit : datapath port map
     p_m_path_op  => p_m_path_op,
     byte_offset  => byte_offset,
     ReW          => ReW ,
+    HWDATA       => HWDATA,
+    HADDR        => HADDR,
+    HRDATA       => HRDATA,
     shift_type   => shift_type,
     shift_enable => shift_enable
 );
 
 controller: main_controller port map
 ( 
-    clock        => clock,
+    clock        => clk,
+    push_button  => push_button,
     reset        => reset,
+    pr           => pr,
     ins          => ins,
+    hready       => hready,
+    hsize        => hsize,
+    M            => M,
     F            => F,
     PW           => PW,
     IorD         => IorD,
@@ -213,6 +248,7 @@ controller: main_controller port map
     shift_type   => shift_type,
     shift_enable => shift_enable
 );
-
-
+MemR  <= MR;
+MemW  <= MW;
+reg <= regl;
 end data_control;

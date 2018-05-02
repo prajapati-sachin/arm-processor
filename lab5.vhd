@@ -45,8 +45,40 @@ with instr select
          not(z or (n xor v))       when "1100",
          z or (n xor v)            when "1101",
          '1'                       when others;
+--p <= '1';
     
 end Bctrl;
+
+---------------------------------------------------------------------------------------------------------------
+-- REGISTER
+-----------------------------------------------------------------------------------------------------------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+USE ieee.std_logic_unsigned.all;
+entity register_0 is
+port(
+    wr : IN  std_logic;
+    enable: IN std_logic; 
+    --clock : IN std_logic;  
+  rd : OUT std_logic  
+  );
+end register_0;
+
+architecture register_0 of register_0 is
+signal data : std_logic;
+begin
+    rd <= data;
+    process(enable,wr)
+        begin
+        --if clock'event and clock = '1' then
+        if enable ='1' then
+                data <= wr;
+        end if;
+        --end if;
+    end process;
+
+end register_0;
 
 
 ---------------------------------------------------------------------------------------------------------------
@@ -132,8 +164,8 @@ signal temp_amount : std_logic_vector(4 downto 0):= "00000";
 begin
    process(Instruction)
         begin
-        case Instruction(27 downto 26) is
-            when "00" =>  F <= "00"; 
+        if Instruction(27 downto 26) = "00" then
+              F <= "00"; 
                           S<=Instruction(20);
                           ----------------------------------------------------------------------
                           --DP immediate
@@ -203,6 +235,7 @@ begin
                                                 alu_e <= '0';
                                                 mla_e <= '0';
                                             else
+                                                alu_op <= Instruction(24 downto 21);
                                                 alu_e <= '0';
                                                 mla_e <= '1';
                                             end if;
@@ -240,7 +273,10 @@ begin
                           
                           end if;
                           end if;
-            when "01" =>  F <= "01";
+                          
+                     end if;
+            if Instruction(27 downto 26) = "01" then
+              F <= "01";
                           DT_reg <= Instruction(25);
                           if Instruction(25) = '0' then
                             DT_immediate <= Instruction(11 downto 0);
@@ -255,15 +291,18 @@ begin
                           DT_Writeback <= Instruction(21);
                           DT_Load <= Instruction(20);
                           
-            
-            when "10" =>  F <="10";
+            end if;
+            if Instruction(27 downto 26) = "10" then
+             F <="10";
                           B <= Instruction(24);
                           --alu_op <= "0100";
                           
-            
-            when others => INVALID <= '1';
+            end if;
+            if Instruction(27 downto 26) = "11" then
+             INVALID <= '1';
+             end if;
                 
-        end case;
+        
    end process;
 end Instr_decoder;
 
@@ -278,9 +317,14 @@ USE ieee.std_logic_unsigned.all;
 entity main_controller is
 port(
         clock        : IN std_logic;
+        push_button        : IN std_logic;
  --       F : In std_logic_vector(1 downto 0);  
         reset        : in std_logic;
+        pr : in std_logic; 
         ins          : in std_logic_vector(31 downto 0);
+        hready       : in std_logic;
+        hsize        : out  std_logic_vector(2 downto 0);
+        M           : out  std_logic;
         F            : in std_logic_vector(3 downto 0);
         PW           : out  std_logic;
         IorD         : out  std_logic;
@@ -346,7 +390,7 @@ port(
     DT_Half: OUT std_logic;
     DT_Writeback: OUT std_logic;
     DT_Load : OUT std_logic;
-    DT_U : OUT std_logic := '0';
+    DT_U : OUT std_logic ;
     DT_immediate : OUT std_logic_vector(11 downto 0);
     B : OUT std_logic;
     S : OUT std_logic  
@@ -370,7 +414,17 @@ port(
     );
 end component;
 
+component register_0 is
+port(
+    wr : IN  std_logic;
+    enable: IN std_logic; 
+    --clock : IN std_logic;  
+  rd : OUT std_logic  
+  );
+end component;
+
 type State IS (     
+                   start,
                    fetch,
                    rdAB,
                    rdrs,
@@ -384,7 +438,9 @@ type State IS (
                    M2RF,
                    brn                   
 );
-signal curr_state :State := fetch;
+signal curr_state :State := start;
+signal  alu_opd :  std_logic_vector(3 downto 0);  
+signal  Fol :  std_logic_vector(1 downto 0) := "00";  
 signal  Fo :  std_logic_vector(1 downto 0);  
 signal  DP_imm:  std_logic;
 signal  no_result:  std_logic;
@@ -405,14 +461,78 @@ signal  DT_Load :  std_logic;
 signal  DT_U :  std_logic;
 signal  DT_immediate :  std_logic_vector(11 downto 0);
 signal  B :  std_logic;
+signal  m1 :  std_logic;
 signal  S :  std_logic;
 signal  p:  std_logic; --predicate
+signal  predicate:  std_logic:= '0'; --predicate
+signal  predicateW:  std_logic; --predicate
+
+
+    
 begin
-    process(clock)
+    instruction_decoder : Instr_decoder port map
+(
+    Instruction => ins,
+    F  =>  Fo,
+    DP_imm => DP_imm,
+    no_result => no_result,
+    INVALID => INVALID,
+    immediate => immediate,
+    alu_op => alu_operation,
+    ShTyp  => ShTyp,
+    Sh_amount  => Sh_amount,
+    alu_e => alu_e,
+    mla_e => mla_e,
+    Sh_imm  => Sh_imm,
+    DT_reg  => DT_reg,
+    DT_post => DT_post,
+    DT_Byte => DT_Byte,
+    DT_Half => DT_Half,
+    DT_Writeback => DT_Writeback,
+    DT_Load  => DT_Load,
+    DT_U  => DT_U,
+    DT_immediate  => DT_immediate,
+    B => B,
+    S => S  
+);
+
+Acontrol : Actrl port map
+(
+    F => Fo,
+    DP_op => alu_operation, 
+    DT_U => DT_U,
+    alu_op => alu_opd
+);
+
+Bcontrol : Bctrl port map
+(
+    flags => F,  
+    instr => ins(31 downto 28),
+    p => predicate
+);
+
+p_reg : register_0 port map
+(   wr => predicate,
+    enable => predicateW,
+   -- clock => clock,
+    rd => p
+);
+
+
+
+    process(clock,push_button)
     begin
         if clock'event  and clock ='1' then
+            if curr_state = start then
+                if push_button = '1' then
+                    curr_state <= fetch;
+                end if;
+            end if;
             if curr_state = fetch then
-                curr_state <= rdAB;
+                if pr = '1' then
+                    curr_state <= start;
+                end if;
+                curr_state <= rdAB; 
             end if;
             if curr_state = rdAB then
                 if Fo = "00" then
@@ -470,10 +590,14 @@ begin
                 end if;
             end if;
             if curr_state = wrM then
-                curr_state <= fetch;
+                if hready = '1' then
+                    curr_state <= fetch;
+                end if;
             end if;
             if curr_state = rdM then
-                curr_state <= M2RF;
+                if hready = '1' then
+                    curr_state <= M2RF;
+                end if;
             end if;
             if curr_state = M2RF then
                 curr_state <= fetch;
@@ -484,49 +608,12 @@ begin
         end if;
     end process;
     
-    instruction_decoder : Instr_decoder port map
-    (
-        Instruction => ins,
-        F  =>  Fo,
-        DP_imm => DP_imm,
-        no_result => no_result,
-        INVALID => INVALID,
-        immediate => immediate,
-        alu_op => alu_operation,
-        ShTyp  => ShTyp,
-        Sh_amount  => Sh_amount,
-        alu_e => alu_e,
-        mla_e => mla_e,
-        Sh_imm  => Sh_imm,
-        DT_reg  => DT_reg,
-        DT_post => DT_post,
-        DT_Byte => DT_Byte,
-        DT_Half => DT_Half,
-        DT_Writeback => DT_Writeback,
-        DT_Load  => DT_Load,
-        DT_U  => DT_U,
-        DT_immediate  => DT_immediate,
-        B => B,
-        S => S  
-    );
+
     
-    Acontrol : Actrl port map
-    (
-        F => Fo,
-        DP_op => alu_operation, 
-        DT_U => DT_U,
-        alu_op => alu_op
-    );
-    
-    Bcontrol : Bctrl port map
-    (
-        flags => F,  
-        instr => ins(31 downto 28),
-        p => p
-    );
-    
-    process(curr_state,Fo,DP_imm,no_result,INVALID,immediate,alu_operation,ShTyp,Sh_amount,alu_e,mla_e,Sh_imm ,DT_reg ,DT_post,DT_Byte,DT_Writeback,DT_Load ,DT_U ,DT_immediate,B,S,p )
+    process(clock)
     begin
+    if clock'event and clock ='1' then
+
     PW           <= '0';
    -- IorD         <= '0';
     MR           <= '0';
@@ -538,7 +625,7 @@ begin
   --  Shi          <= '0'; --shift from register or immediate
   --  Shift        <= '0'; --shiftamount( from register '1' and from intruction '0')
     Shift_amount <= "00000";
-    Wsrc         <="00";
+--    Wsrc         <="00";
    -- M2R          <="01"; -- selects REW , Bout or 
     RW           <= '0';
     AW           <= '0';
@@ -552,22 +639,26 @@ begin
   --  Asrc2        <="00";
   --  MorA        <= '0';
     Fset         <= '0';
-    alu_op       <="0100";
     p_m_path_op  <= "0000";
     byte_offset  <="00";
     ReW          <= '0';
+    M1           <= '0';
     shift_type <="00" ;
     shift_enable <= '1';
+    predicateW <= '0';
         if curr_state = fetch then
             IorD <= '0';
             PW <= '1';
             IW <= '1';
             DW <= '0';
-            alu_op <= "0100";
             MR <= '1';
             Asrc1 <= "10";
             Asrc2 <= "01";
+            alu_op <= "0100";
+--            aluW <= '1';
+--            MorA <= '1';
         elsif curr_state = rdAB then
+            predicateW <= '1';
             AW <= '1';
             BW <= '1';
             if Fo = "00" then
@@ -604,6 +695,8 @@ begin
             shftW <= '1';
         elsif curr_state = mul then
             mulW <= '1';
+            Wsrc <= "01";
+            M2R <= "01";
             if mla_e = '0' then
                 MorA <= '0';
                 ReW <= '1';
@@ -614,7 +707,9 @@ begin
             if alu_e = '1' then
                 Asrc1 <= "00";
                 BorS <= "01";
-                Asrc2 <= "00";   
+                Asrc2 <= "00"; 
+                Wsrc <= "00";
+                M2R <= "01";  
             elsif mla_e = '1' then
                 Asrc1 <= "01";
                 BorS <= "10";
@@ -623,6 +718,7 @@ begin
             if S = '1' then
                 Fset <= p;
             end if;
+            alu_op <= alu_operation;
             aluW <='1';
             MorA <= '1';
             ReW <= '1';
@@ -651,20 +747,36 @@ begin
                 BorS <= "01";
                 Asrc2 <= "10";
             end if;
+            if DT_U = '1' then
+                alu_op <= "0100";
+            else 
+                alu_op <= "0101";
+            end if;
             aluW <='1';
             BW <= '1';
             Rsrc1 <= '1';
+            MorA <= '1';
+            ReW <= '1';
         elsif curr_state = wrM then
             MW <= p;
             IorD <= '1';
+            if m1 = '0' then
+                m1 <= p;
+            else 
+                m1 <= '0';
+            end if;
+                
             if DT_half = '1' then
                 p_m_path_op <= "0010";
                 byte_offset <= "01";
+                hsize <= "001";
             elsif DT_Byte = '1' then
                 p_m_path_op <= "0101";
                 byte_offset <= "11";
+                hsize <= "000";
             else
                 p_m_path_op <="0001";
+                hsize <= "010";
             end if;
             --half full and byte
             if DT_Writeback = '1' then
@@ -679,6 +791,11 @@ begin
             MR <= '1';
             IW <= '0';
             DW <= '1';
+            M1 <= '1';
+            if hready = '1' then
+                Wsrc <= "00";
+                M2r <= "10";
+            end if;
             if DT_Writeback = '1' then
                 RW <= p;
                 Wsrc <= "01";
@@ -698,18 +815,21 @@ begin
                 p_m_path_op <="0001";
             end if;
             --half full and byte
+            Wsrc <= "00";
             M2R <= "10";
         elsif curr_state = brn then
             pw <= p;
             Asrc1 <= "10";
             Asrc2 <= "11";
-            aluW <='1';
             if B = '1' then
                 RW <= '1';
                 Wsrc <= "10";
                 M2R <= "01";
             end if;
         end if;
-    end process;      
+        end if;
+    end process;  
+    
+    m <= m1;    
 end main_controller;
 
